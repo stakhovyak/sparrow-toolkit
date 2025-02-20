@@ -147,7 +147,7 @@ graph.launch({
     }
 })
 
-// Another example
+// Another example, asked ai to generate some accoring to the code
 
 // Create graph from social network data
 const socialGraph = createDynamicGraph(socialNetworkCRS);
@@ -158,42 +158,43 @@ const communities = spectralClustering(socialGraph.matrix, { k: 20 });
 // Setup containment protocol hooks
 useGraphHooks({
   'node:visited': async ({ node }, { graph, dispatch }) => {
-    const cluster = Array.from(graph.clusters.values())
-      .find(c => c.nodes.has(node));
+      const cluster = Array.from(graph.clusters.values())
+	  .find(c => c.nodes.has(node));
 
-    // If >30% infected in cluster, quarantine it
-    const infected = cluster.properties.get('infected') as Set<number>;
-    if (infected.size / cluster.nodes.size > 0.3) {
-      dispatch({
-        type: 'cluster:split',
-        parent: cluster.id,
-        children: [uuid(), uuid()]
-      });
-    }
+      // If >30% infected in cluster, quarantine it
+      const infected = cluster.properties.get('infected') as Set<number>;
+      if (infected.size / cluster.nodes.size > 0.3) {
+	  dispatch({
+              type: 'cluster:split',
+              parent: cluster.id,
+              children: [uuid(), uuid()]
+	  });
+      }
   },
   'cluster:split': ({ parent, children }) => {
     // Create containment boundaries
     children.forEach(childId =>
-      socialGraph.mutateCluster(childId, c =>
-        c.properties.set('quarantined', true)
-      )
+	socialGraph.mutateCluster(childId, c =>
+            c.properties.set('quarantined', true)
+	)
+    )
   }
 });
 
 // Epidemic process
 socialGraph.launch({
-  *steps({ emit }) {
-    const patientZero = findCentralNode(socialGraph);
+    *steps({ emit }) {
+	const patientZero = findCentralNode(socialGraph);
 
-    yield* spreadVirus(patientZero, {
-      infectionRate: 0.15,
-      emitVisit: (node) => emit({
-        type: 'node:visited',
-        node,
-        cluster: 'initial'
-      })
-    });
-  }
+	yield* spreadVirus(patientZero, {
+	    infectionRate: 0.15,
+	    emitVisit: (node) => emit({
+		type: 'node:visited',
+		node,
+		cluster: 'initial'
+	    })
+	});
+    }
 });
 
 async function* spreadVirus(start: number, opts: {
