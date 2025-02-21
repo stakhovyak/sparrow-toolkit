@@ -1,30 +1,23 @@
 import {
-    EmbeddedMatrix,
-    EmbeddingContext,
+    EmbeddedMatrix, EmbeddingContext,
     IMatrix,
-    MatrixCell,
-    MatrixEvent,
+    LaplacianMatrix, MatrixCell, MatrixEvent,
     MatrixOperator,
     MatrixSubscriber,
+    SymmetricMatrix,
 } from './matrix.interface'
 
 /**
- * Represents the underlying CRS structure
+ * The same as regular CRS, but a bit optimized, assuming it is symmetrical all this stuff
  */
-export type SparseMatrixCRS = {
-    values: Float64Array;
-    collIndices: Int32Array;
-    rowPtr: Int32Array
-}
-
-export class SparseSRCMatrix<T = number> implements IMatrix<T> {
-    public readonly rows: number
-    public readonly cols: number
+export class LaplacianCRS implements LaplacianMatrix, SymmetricMatrix<any>{
+    public readonly rowsNum: number
+    public readonly colsNum: number
     public readonly values: Float64Array
     public readonly colIndices: Int32Array
     public readonly rowPtr: Int32Array
 
-    private subscribers: MatrixSubscriber<T>[] = []
+    private subscribers: MatrixSubscriber<number>[] = []
 
     constructor(
         values: Float64Array,
@@ -34,41 +27,41 @@ export class SparseSRCMatrix<T = number> implements IMatrix<T> {
         cols: number,
     ) {
         this.values = values
-        this.cols = cols
-        this.rows = rows
+        this.colsNum = cols
+        this.rowsNum = rows
         this.rowPtr = rowPtr
         this.colIndices = colIndices
     }
 
-    get(row: number, col: number): T {
+    get(row: number, col: number): number {
         throw new Error('get() method not implemented.')
     }
 
     map<U>(
-        fn: (value: T, row: number, col: number) => U,
-        options?: { sparse?: boolean }
+        fn: (value: number, row: number, col: number) => U,
+        options?: { sparse?: boolean },
     ): IMatrix<U> {
         throw new Error('map() method is not implemented yet')
     }
 
     filter(
-        predicate: (value: T, row: number, col: number) => boolean,
-    ): IMatrix<T> {
+        predicate: (value: number, row: number, col: number) => boolean,
+    ): IMatrix<number> {
         throw new Error('filter() method is not implemented yet')
     }
 
     submatrix(
         rowRange: [number, number],
         colTange: [number, number]
-    ): IMatrix<T> & EmbeddedMatrix {
+    ): IMatrix<number> & EmbeddedMatrix {
         throw new Error('method submatrix() is not implemented yet')
     }
 
     embed(
-        sub: IMatrix<T>,
+        sub: IMatrix<number>,
         position: [number, number],
         strategy: 'overwrite' | 'merge' = 'overwrite',
-    ): IMatrix<T> & EmbeddedMatrix {
+    ): IMatrix<number> & EmbeddedMatrix {
         throw new Error('embed() method is not implemented yet')
     }
 
@@ -76,11 +69,11 @@ export class SparseSRCMatrix<T = number> implements IMatrix<T> {
         throw new Error('pipe() method is not implemented yet')
     }
 
-    nonZeroEntries(): () => Iterable<MatrixCell<T>> {
+    nonZeroEntries(): () => Iterable<MatrixCell<number>> {
         throw new Error('nonZeroEntries() method is not implemented yet')
     }
 
-    subscribe(subscriber: MatrixSubscriber<T>): () => void {
+    subscribe(subscriber: MatrixSubscriber<number>): () => void {
         this.subscribers.push(subscriber);
 
         return () => {
@@ -91,7 +84,7 @@ export class SparseSRCMatrix<T = number> implements IMatrix<T> {
         }
     }
 
-    protected notifySubscribers(event: MatrixEvent<T>): void {
+    protected notifySubscribers(event: MatrixEvent<number>): void {
         const context: EmbeddingContext = {
             depth: 0,
             versionChain: [],
@@ -106,8 +99,8 @@ export class SparseSRCMatrix<T = number> implements IMatrix<T> {
         }
     }
 
-    protected triggerDataChange(changes: MatrixCell<T>[]): void {
-        const event: MatrixEvent<T> = { type: 'data-change', changes };
+    protected triggerDataChange(changes: MatrixCell<number>[]): void {
+        const event: MatrixEvent<number> = { type: 'data-change', changes };
         this.notifySubscribers(event)
     }
 }

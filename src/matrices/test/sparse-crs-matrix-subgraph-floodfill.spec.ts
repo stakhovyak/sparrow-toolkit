@@ -1,6 +1,6 @@
 // Helper: simulate asynchronous delay.
-import { IMatrix, MatrixCell } from './matrix.interface'
-import { SparseSRCMatrix } from './sparse-crs-matrix.class'
+import { IMatrix, MatrixCell } from '../matrix.interface'
+import { CRS } from '../crs-matrix.class'
 
 function delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
@@ -24,7 +24,7 @@ function getNeighbors(
     for (const d of directions) {
         const newRow = cell.row + d.row;
         const newCol = cell.col + d.col;
-        if (newRow >= 0 && newRow < matrix.rows && newCol >= 0 && newCol < matrix.cols) {
+        if (newRow >= 0 && newRow < matrix.rowsNum && newCol >= 0 && newCol < matrix.colsNum) {
             neighbors.push({ row: newRow, col: newCol });
         }
     }
@@ -73,7 +73,7 @@ function triggerZoneFunction(change: { row: number; col: number; value: number }
 
 // Assume that 'SparseSRCMatrix' implements IMatrix.
 // Here we create a dummy parent graph with a 10x10 grid.
-const parentGraph = new SparseSRCMatrix<number>(
+const parentGraph = new CRS<number>(
     new Float64Array([/* dummy values */]),
     new Int32Array([/* dummy col indices */]),
     new Int32Array([/* dummy row pointers */]),

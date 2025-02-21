@@ -1,7 +1,7 @@
 // Assume these helper functions are available:
 
-import { IMatrix, MatrixCell } from './matrix.interface'
-import { SparseSRCMatrix } from './sparse-crs-matrix.class'
+import { IMatrix, MatrixCell } from '../matrix.interface'
+import { CRS } from '../crs-matrix.class'
 
 /**
  * Simulate a delay (as a stand-in for heavy computation).
@@ -38,7 +38,7 @@ const bigRowPtr = new Int32Array([0, 2, 3, 5]); // e.g., 3 rows
 const bigRows = 3;
 const bigCols = 5;
 
-const bigGraph = new SparseSRCMatrix<number>(
+const bigGraph = new CRS<number>(
     bigValues,
     bigColIndices,
     bigRowPtr,

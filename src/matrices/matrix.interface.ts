@@ -1,6 +1,9 @@
 /**
  * A single matrix cell
  */
+// todo; how to change the structure of the interface depending on
+//  the implementation of the matrix? because Triples and CRS have
+//  different approached to the cell of matrix, or no??
 export interface MatrixCell<T = number> {
     readonly row: number
     readonly col: number
@@ -12,8 +15,8 @@ export interface MatrixCell<T = number> {
  * Methods return new matrix instances for immutable operations
  */
 export interface IMatrix<T = number> {
-    readonly rows: number
-    readonly cols: number
+    readonly rowsNum: number
+    readonly colsNum: number
 
     /**
      * a getter of value at certain index
@@ -30,7 +33,7 @@ export interface IMatrix<T = number> {
      */
     map<U>(
         fn: (value: T, row: number, col: number) => U,
-        options?: { sparse?: boolean }
+        options?: { sparse?: boolean },
     ): IMatrix<U>
 
     /**
@@ -44,11 +47,11 @@ export interface IMatrix<T = number> {
      * Create a view into a subregion of the matrix at a given position
      * The returned matrix carries metadata
      * @param rowRange
-     * @param colTange
+     * @param colRange
      */
     submatrix(
         rowRange: [number, number],
-        colTange: [number, number],
+        colRange: [number, number],
     ): IMatrix<T> & EmbeddedMatrix
 
     /**
@@ -99,6 +102,7 @@ export interface EmbeddedMatrix {
  */
 export interface MatrixFactory<T = number> {
     create(options: MatrixCreateOptions<T>): IMatrix<T>
+
     fromCells(cells: MatrixCell<T>[], rows: number, cols: (number)): IMatrix<T> // todo; by default cols == rows and vise versa if one not provided
     fromDense(array: T[][]): IMatrix<T>
 }
@@ -118,6 +122,8 @@ export type MatrixEvent<T> =
     | { type: 'data-change'; changes: MatrixCell<T>[] }
     | { type: 'shape-change'; newRows?: number; newCols: number }
     | { type: 'embedding-update'; source: IMatrix<T> }
+    | { type: 'edge-visited'; source: MatrixCell<T> }
+    | { type: 'vertex-visited'; source: MatrixCell<T> }
 
 /**
  * Context passed along with events to allow propagation through nested matrices
@@ -126,6 +132,7 @@ export interface EmbeddingContext {
     readonly depth: number
     readonly versionChain: symbol[]
     readonly inheritanceChain: IMatrix[]
+
     propagate(event: MatrixEvent<unknown>): void
 }
 
@@ -133,37 +140,35 @@ export interface MatrixSubscriber<T = number> {
     notify(
         event: MatrixEvent<T>,
         matrix: IMatrix<T>,
-        context: EmbeddingContext
+        context: EmbeddingContext,
     ): void
 }
 
 export type MatrixOperator<T = number, U = number> = (
-    source: IMatrix<T>
+    source: IMatrix<T>,
 ) => IMatrix<U>
 
+export interface LaplacianMatrix extends IMatrix<number>, LaplacianTag {
+
+}
+export interface SymmetricMatrix<T> extends IMatrix<unknown>, SymmetricTag {
+
+}
+
 /**
- * Example usage:
- *
-declare const socialConnections: MatrixCell[]
+ * Represents the underlying CRS structure
+ */
+export type CRSType = {
+    values: Float64Array
+    collIndices: Int32Array
+    rowPtr: Int32Array
+}
 
-const socialGraph = MatrixFactory.fromCells(socialConnections, 500, 500)
-
-const communityView = socialGraph
-    .submatrix([100, 200], [300, 400])
-    .map(v => (v > 0.5 ? 1 : 0))
-
-const updatedGraph = socialGraph.embed(communityView, [100, 300], 'merge')
-
-updatedGraph.subscribe({
-    notify(event) {
-        if (event.type === 'data-change') {
-            // do smth
-        }
-    }
-})
-
-const laplacian = socialGraph
-    .map(v => Math.abs(v))
-    .filter(v => v > 0.1)
-    .pipe(toLaplacian)
-*/
+/**
+ * Represents the underlying Triples structure
+ */
+export type TriplesType = {
+    values: Float64Array
+    col: Int32Array
+    row: Int32Array
+}
