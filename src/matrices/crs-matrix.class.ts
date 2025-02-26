@@ -8,14 +8,32 @@ import {
     MatrixSubscriber,
 } from './matrix.interface'
 
-export interface CRSMatrixCell<T extends number = number>
+export interface CRSMatrixCell<T extends number>
     extends Partial<MatrixCell<T>> {
     rowPtr: number
     colIndices: number
     value: T
 }
 
-export class CRS<T extends number = number> implements IMatrix<T> {
+export class CRSMatrixCellOperateable<T extends number>
+    implements CRSMatrixCell<T>
+{
+    constructor(
+        readonly rowPtr: number,
+        readonly colIndices: number,
+        readonly value: T,
+    ) {}
+
+    mutate(target: CRSMatrixCellOperateable<T>): CRSMatrixCellOperateable<T> {
+        return new CRSMatrixCellOperateable<T>(
+            target.rowPtr,
+            target.colIndices,
+            target.value,
+        )
+    }
+}
+
+export class CRS<T extends number> implements IMatrix<T> {
     private subscribers: MatrixSubscriber<T>[] = []
 
     constructor(
@@ -25,6 +43,17 @@ export class CRS<T extends number = number> implements IMatrix<T> {
         public readonly rowsNum: number,
         public readonly colsNum: number,
     ) {}
+
+    cells: MatrixCell<T>[]
+    map(fn: (cell: MatrixCell<T>) => MatrixCell<T>): IMatrix<T> {
+        throw new Error('Method not implemented.')
+    }
+    filter(predicate: (cell: MatrixCell<T>) => boolean): IMatrix<T> {
+        throw new Error('Method not implemented.')
+    }
+    embed(target: IMatrix<T>, position: [number, number], transOperator?: ((a: MatrixCell<T>, b: MatrixCell<T>) => MatrixCell<T>) | undefined): IMatrix<T> {
+        throw new Error('Method not implemented.')
+    }
 
     get(row: number, col: number): T {
         throw new Error('get() method not implemented.')
@@ -36,19 +65,6 @@ export class CRS<T extends number = number> implements IMatrix<T> {
 
     getRow(col: number): IMatrix<T> {
         throw new Error('get() method not implemented.')
-    }
-
-    map<U>(
-        fn: (value: T, row: number, col: number) => U,
-        options?: { sparse?: boolean },
-    ): IMatrix<U> {
-        throw new Error('map() method is not implemented yet')
-    }
-
-    filter(
-        predicate: (value: T, row: number, col: number) => boolean,
-    ): IMatrix<T> {
-        throw new Error('filter() method is not implemented yet')
     }
 
     submatrix(
@@ -65,15 +81,9 @@ export class CRS<T extends number = number> implements IMatrix<T> {
         throw new Error('submatrixByIndices() is not implemented yet')
     }
 
-    embed(
-        sub: IMatrix<T>,
-        position: [number, number],
-        strategy: 'overwrite' | 'merge' = 'overwrite',
-    ): IMatrix<T> & EmbeddedMatrix {
-        throw new Error('embed() method is not implemented yet')
-    }
-
-    pipe<U>(...operators: MatrixOperator<any, any>[]): IMatrix<U> {
+    pipe<U extends number>(
+        ...operators: MatrixOperator<any, any>[]
+    ): IMatrix<U> {
         throw new Error('pipe() method is not implemented yet')
     }
 
