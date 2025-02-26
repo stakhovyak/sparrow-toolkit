@@ -8,30 +8,33 @@ import {
     MatrixSubscriber,
 } from './matrix.interface'
 
-export class CRS <T = number> implements IMatrix<T> {
-    public readonly rowsNum: number
-    public readonly colsNum: number
-    public readonly values: Float64Array
-    public readonly colIndices: Int32Array
-    public readonly rowPtr: Int32Array
+export interface CRSMatrixCell<T extends number = number>
+    extends Partial<MatrixCell<T>> {
+    rowPtr: number
+    colIndices: number
+    value: T
+}
 
+export class CRS<T extends number = number> implements IMatrix<T> {
     private subscribers: MatrixSubscriber<T>[] = []
 
     constructor(
-        values: Float64Array,
-        colIndices: Int32Array,
-        rowPtr: Int32Array,
-        rows: number,
-        cols: number,
-    ) {
-        this.values = values
-        this.colsNum = cols
-        this.rowsNum = rows
-        this.rowPtr = rowPtr
-        this.colIndices = colIndices
-    }
+        public readonly values: Float64Array,
+        public readonly colIndices: Int32Array,
+        public readonly rowPtr: Int32Array,
+        public readonly rowsNum: number,
+        public readonly colsNum: number,
+    ) {}
 
     get(row: number, col: number): T {
+        throw new Error('get() method not implemented.')
+    }
+
+    getCol(col: number): IMatrix<T> {
+        throw new Error('get() method not implemented.')
+    }
+
+    getRow(col: number): IMatrix<T> {
         throw new Error('get() method not implemented.')
     }
 
@@ -50,9 +53,16 @@ export class CRS <T = number> implements IMatrix<T> {
 
     submatrix(
         rowRange: [number, number],
-        colTange: [number, number]
+        colRange: [number, number],
     ): IMatrix<T> & EmbeddedMatrix {
         throw new Error('method submatrix() is not implemented yet')
+    }
+
+    submatrixByIndices(
+        rows: Set<number>,
+        cols: Set<number>,
+    ): IMatrix<T> & EmbeddedMatrix {
+        throw new Error('submatrixByIndices() is not implemented yet')
     }
 
     embed(
@@ -67,15 +77,15 @@ export class CRS <T = number> implements IMatrix<T> {
         throw new Error('pipe() method is not implemented yet')
     }
 
-    nonZeroEntries(): () => Iterable<MatrixCell<T>> {
+    nonZeroEntries(): Iterable<MatrixCell<T>> {
         throw new Error('nonZeroEntries() method is not implemented yet')
     }
 
     subscribe(subscriber: MatrixSubscriber<T>): () => void {
-        this.subscribers.push(subscriber);
+        this.subscribers.push(subscriber)
 
         return () => {
-            const index = this.subscribers.indexOf(subscriber);
+            const index = this.subscribers.indexOf(subscriber)
             if (index !== -1) {
                 this.subscribers.splice(index, 1)
             }
@@ -89,7 +99,7 @@ export class CRS <T = number> implements IMatrix<T> {
             inheritanceChain: [],
             propagate(event: MatrixEvent<unknown>) {
                 // In full implementation, this could forward events upstream
-            }
+            },
         }
 
         for (const subscriber of this.subscribers) {
@@ -98,7 +108,7 @@ export class CRS <T = number> implements IMatrix<T> {
     }
 
     protected triggerDataChange(changes: MatrixCell<T>[]): void {
-        const event: MatrixEvent<T> = { type: 'data-change', changes };
+        const event: MatrixEvent<T> = { type: 'data-change', changes }
         this.notifySubscribers(event)
     }
 }

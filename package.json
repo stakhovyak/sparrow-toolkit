@@ -1,22 +1,22 @@
 {
-  "name": "spectrum",
-  "version": "1.0.0",
-  "description": "a little library to process laplacian graphs",
-  "main": "index.js",
-  "scripts": {
-    "test": "test"
-  },
-  "keywords": [
-    "graph",
-    "laplacian",
-    "geometry"
-  ],
-  "author": "weuoimi",
-  "license": "ISC",
-  "dependencies": {
-    "@types/node": "^22.13.4"
-  },
-  "devDependencies": {
-    "typescript": "^5.7.3"
-  }
+    "name": "spectrum",
+    "version": "1.0.0",
+    "description": "a little library to process laplacian graphs",
+    "main": "index.js",
+    "scripts": {
+        "test": "test"
+    },
+    "keywords": [
+        "graph",
+        "laplacian",
+        "geometry"
+    ],
+    "author": "weuoimi",
+    "license": "ISC",
+    "dependencies": {
+        "@types/node": "^22.13.4"
+    },
+    "devDependencies": {
+        "typescript": "^5.7.3"
+    }
 }
