@@ -1,0 +1,26 @@
+#+title: Typescript toolkit for laplacian matrix calculation
+#+author: Weuoimi
+
+* Laplacian matrices for spectral graph theory related tasks
+
+** Why this exists?
+
+Solely for my artisic needs and creative programming tasks.
+
+** Why use it?
+
+Because you don't only calculate laplacian matrices with the lib, but
+you can tie up your functions to certain events, happening inside the
+graphs represented by sparse matrices during transformations or user-defined
+algorithms evaluation.
+
+** TODOs
+
+*** TODO [#A] getCol() getRow() do not pass the tests!
+*** TODO [#A] Implement CRS sparse matrix representation
+*** TODO [#A] Implement subscriber/publisher logic in matrices
+*** TODO [#B] functional primitives spApp, spRef, spMV, spGEMM etc...
+*** TODO [#B] special hooks api for the matrices
+
+
+

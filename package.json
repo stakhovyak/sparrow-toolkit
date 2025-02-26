@@ -4,7 +4,7 @@
     "description": "a little library to process laplacian graphs",
     "main": "index.js",
     "scripts": {
-        "test": "test"
+        "test": "jest"
     },
     "keywords": [
         "graph",
@@ -17,6 +17,10 @@
         "@types/node": "^22.13.4"
     },
     "devDependencies": {
-        "typescript": "^5.7.3"
+        "@types/jest": "^29.5.14",
+        "jest": "^29.7.0",
+        "ts-jest": "^29.2.6",
+        "typescript": "^5.7.3",
+        "undefined": "^0.1.0"
     }
 }
