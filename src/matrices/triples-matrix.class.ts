@@ -7,17 +7,17 @@ import {
     MatrixEvent,
     MatrixOperator,
     MatrixSubscriber,
+    Operateable,
 } from './matrix.interface'
 
-export interface TriplesMatrixCell<T extends number>
-    extends Partial<MatrixCell<T>> {
+export interface TriplesMatrixCell<T extends number> extends MatrixCell<T> {
     col: number
     row: number
     value: T
 }
 
 export class TriplesMatrixCellOperateable<T extends number>
-    implements TriplesMatrixCell<T>
+    implements TriplesMatrixCell<T>, Operateable<T>
 {
     constructor(
         readonly col: number,
@@ -39,9 +39,15 @@ export class TriplesMatrixCellOperateable<T extends number>
 export class Triples<T extends number> implements IMatrix<T> {
     private subscribers: MatrixSubscriber<T>[] = []
 
+    constructor(
+        public readonly rowsNum: number = 0,
+        public readonly colsNum: number = 0,
+        public readonly cells: TriplesMatrixCell<T>[] = [],
+    ) {}
+
     Factory: MatrixFactoryConstructor<Triples<T>, T> = {
         fromArray: (array: () => T[]): Triples<T> => {
-            let result = new Array<TriplesMatrixCell<T>>(array().length)
+            let result: TriplesMatrixCell<T>[] = []
             array().forEach((val, index) => {
                 if (!(val <= 0)) {
                     result.push({
@@ -53,8 +59,8 @@ export class Triples<T extends number> implements IMatrix<T> {
             })
             return new Triples(1, array().length, result)
         },
-        fromDoubleArray: (array: () => T[][]): Triples<T> => {
-            let result = new Array<TriplesMatrixCell<T>>(array().length) // todo; get the biggest value from height and length of the T[][]
+        from2DArray: (array: () => T[][]): Triples<T> => {
+            let result: TriplesMatrixCell<T>[] = [] // todo; get the biggest value from height and length of the T[][]
             array().forEach((val, rowIndex) => {
                 val.forEach((val, colIndex) => {
                     if (!(val <= 0)) {
@@ -66,9 +72,11 @@ export class Triples<T extends number> implements IMatrix<T> {
                     }
                 })
             })
-            return new Triples(array().length, array().length, result) // todo; how to get length and heigth of the T[][]?
+            return new Triples(array().length, array().length, result) // todo; how to get length and height of the T[][]?
         },
-        fromCells: (cells: () => TriplesMatrixCell<T>[]): Triples<T> => {
+        fromCells: (
+            cells: () => (MatrixCell<T> & { col: number; row: number })[],
+        ): Triples<T> => {
             return new Triples(
                 cells().reduce((prevCell, currCell) => {
                     return currCell.row < prevCell.row ? currCell : prevCell
@@ -81,42 +89,37 @@ export class Triples<T extends number> implements IMatrix<T> {
         },
     }
 
-    constructor(
-        public readonly rowsNum: number,
-        public readonly colsNum: number,
-        readonly cells: TriplesMatrixCell<T>[],
-    ) {}
-
     get(row: number, col: number): T {
-        return this.cells[
-            this.cells.findIndex(cell => cell.col === col && cell.row === row)
-        ].value as T
+        const cell = this.cells.find(
+            cell => cell.row === row && cell.col === col,
+        )
+        if (cell == undefined) {
+            throw new Error(`Cell at row ${row}, col ${col} not found`)
+        }
+        return cell.value as T
     }
 
     getRow(row: number): Triples<T> {
         return this.Factory.fromArray((): T[] => {
-            let arr: T[] = new Array(this.colsNum).fill(0) // new array of size corr. to matr. length
+            const arr: T[] = []
+            arr.fill(0 as T)
             this.cells
-                .filter(cell => {
-                    // filter out cells we need by row correspondense
-                    cell.row === row
-                })
+                .filter(cell => cell.row === row)
                 .forEach(cell => {
-                    arr.fill(cell.value as T, cell.col, cell.col)
+                    arr[cell.col] = cell.value as T
                 })
             return arr
-        }) // creates new Matrix rowsNum = 1, colsNum = this.cellArr.colsNum
+        })
     }
 
     getCol(col: number): Triples<T> {
         return this.Factory.fromArray((): T[] => {
-            let arr: T[] = new Array(this.rowsNum).fill(0)
+            const arr: T[] = []
+            arr.fill(0 as T)
             this.cells
-                .filter(cell => {
-                    cell.col === col
-                })
+                .filter(cell => cell.col === col)
                 .forEach(cell => {
-                    arr.fill(cell.value as T), cell.row, cell.row
+                    arr[cell.row] = cell.value as T
                 })
             return arr
         })
@@ -138,13 +141,13 @@ export class Triples<T extends number> implements IMatrix<T> {
         rowRange: [from: number, to: number],
         colRange: [from: number, to: number],
     ): Triples<T> & EmbeddedMatrix {
-        return this.Factory.fromCells((): TriplesMatrixCell<T>[] => {
-            return this.cells.filter(cell => {
+        return this.filter(cell => {
+            return (
                 cell.row >= rowRange[0] &&
-                    cell.row <= rowRange[1] &&
-                    cell.col >= colRange[0] &&
-                    cell.col <= colRange[1]
-            })
+                cell.row <= rowRange[1] &&
+                cell.col >= colRange[0] &&
+                cell.col <= colRange[1]
+            )
         }) as Triples<T> & EmbeddedMatrix
     }
 
@@ -207,10 +210,8 @@ export class Triples<T extends number> implements IMatrix<T> {
         throw new Error('pipe() method is not implemented yet')
     }
 
-    nonZeroEntries(): Iterable<MatrixCell<T>> {
-        return this.cells.filter(cell => {
-            cell.value !== 0
-        })
+    nonZeroEntries(): Iterable<TriplesMatrixCell<T>> {
+        return this.cells.filter(cell => cell.value !== 0)
     }
 
     subscribe(subscriber: MatrixSubscriber<T>): () => void {

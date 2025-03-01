@@ -16,8 +16,9 @@ algorithms evaluation.
 
 ** TODOs
 
-*** TODO [#A] getCol() getRow() do not pass the tests!
-*** TODO [#A] Implement CRS sparse matrix representation
+*** DONE [#A] getCol() getRow() do not pass the tests!
+*** DONE [#A] Implement CRS sparse matrix representation
+*** TODO [#A] Test CSR methods and document it with examples 
 *** TODO [#A] Implement subscriber/publisher logic in matrices
 *** TODO [#B] functional primitives spApp, spRef, spMV, spGEMM etc...
 *** TODO [#B] special hooks api for the matrices

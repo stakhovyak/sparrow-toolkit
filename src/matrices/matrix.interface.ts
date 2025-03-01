@@ -5,6 +5,17 @@ export interface MatrixCell<T extends number> {
     readonly value: T
 }
 
+export interface Operateable<T> {
+    mutate(target: Operateable<T>): Operateable<T>
+}
+
+export type MatrixCellValue<T> = { value: T }
+export type MatrixCellTransform<T extends number> = (cell: MatrixCell<T>) => MatrixCellValue<T>
+export type MatrixCellOperator<T> = (
+    a: MatrixCellValue<T>,
+    b: MatrixCellValue<T>,
+) => MatrixCellValue<T>
+
 /**
  * Core interface for a matrix
  * Methods return new matrix instances for immutable operations
@@ -30,9 +41,7 @@ export interface IMatrix<T extends number> {
      * Optionally create a sparse version if options.sparse is true
      * @param fn the body of map function
      */
-    map(
-        fn: (cell: MatrixCell<T>) => MatrixCell<T>,
-    ): IMatrix<T>
+    map<U extends number>(fn: (cell: MatrixCell<T>) => U): IMatrix<U>
 
     /**
      * Filter the matrix cells
@@ -66,7 +75,7 @@ export interface IMatrix<T extends number> {
     embed(
         target: IMatrix<T>,
         position: [number, number],
-        transOperator?: (a: MatrixCell<T>, b: MatrixCell<T>) => MatrixCell<T>,
+        transOperator: MatrixCellOperator<T>
     ): IMatrix<T>
 
     /**

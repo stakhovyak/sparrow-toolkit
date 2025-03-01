@@ -5,6 +5,6 @@ export interface MatrixFactoryConstructor<
     T extends number,
 > {
     fromArray(array: () => T[]): M
-    fromDoubleArray(array: () => T[][]): M
-    fromCells(cells: () => MatrixCell<T>[]): M
+    from2DArray(array: () => T[][]): M
+    fromCells(rowsNum: number, colsNum: number, cells: () => MatrixCell<T>[]): M
 }
