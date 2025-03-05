@@ -41,12 +41,17 @@ Promise.resolve(initialValue)
 
 ```ts
 const computeDegreeMatrix = composeMatrixOperators(
-  // Step 1: CSR<number> -> number[] (degrees)
-  (adjacency: CSR<number>) => reduce(...)(adjacency),
-  
-  // Step 2: number[] -> CSR<number> (diagonal matrix)
-  (degrees: number[]) => createCSRFromDiagonal(degrees)
-);
+            (adjacency: CSR<number>) =>
+                reduce(
+                    nonZeroCellsGet,
+                    (degrees, cell) => {
+                        degrees[cell.row] = (degrees[cell.row] || 0) + cell.val
+                        return degrees
+                    },
+                    [] as number[],
+                )(adjacency),
+            (degrees: number[]) => createCSRFromDiagonal(degrees),
+)
 
 // Execution flow:
 // adjacency -> degrees array -> diagonal CSR matrix
