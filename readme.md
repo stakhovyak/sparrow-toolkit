@@ -44,7 +44,7 @@ const computeDegreeMatrix = composeMatrixOperators(
             (adjacency: CSR<number>) =>
                 reduce(
                     nonZeroCellsGet,
-                    (degrees, cell) => {
+                    (degrees: number[], cell: MatrixCell<number>): number[] => {
                         degrees[cell.row] = (degrees[cell.row] || 0) + cell.val
                         return degrees
                     },
