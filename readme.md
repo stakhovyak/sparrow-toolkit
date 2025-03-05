@@ -72,10 +72,10 @@ const computeLaplacian = composeMatrixOperators(
   // Step 1: Return both A and D for later use
   (A: CSR<number>) => ({
     A,
-    D: computeDegreeMatrix(A)
+    D: computeDegreeMatrix(A) // returns Promise<CSR<number>>
   }),
   // Step 2: Use D and A from the object
-  ({ D, A }) => subtractCSR(D, A)
+  ({ D, A }) => subtractCSR(await D, A)
 );
 
 const laplacian = await computeLaplacian(adjacencyMatrix)
