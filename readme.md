@@ -55,6 +55,9 @@ const computeDegreeMatrix = composeMatrixOperators(
 
 // Execution flow:
 // adjacency -> degrees array -> diagonal CSR matrix
+const degreeMatrix = computeDegreeMatrix(createCSRFromCells(3, 3, [
+                                              {row: 1, col: 4, val: 10}, {row: 0, col: 0, val: 11}
+                                        ])
 ```
 
 ### How results are extracted?
