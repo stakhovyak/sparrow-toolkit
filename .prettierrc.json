@@ -10,6 +10,7 @@
     "quoteProps": "as-needed",
     "requirePragma": false,
     "semi": false,
+    "experimentalOperatorPosition": "start",
     "singleQuote": true,
     "tabWidth": 4,
     "trailingComma": "all",
