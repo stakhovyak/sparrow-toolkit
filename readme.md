@@ -14,69 +14,76 @@ the compilation of higher-order functions from other higher-order functions into
 Another notable feature of the lib is extensible usage of promises, as they force 
 the programmer to use handlers, to prevent function side effects
 
-### Composing operators example 
+## How to compose algebraic/matrix operations? 
 
-For example, to compose matrix operator you can use pipe macro `composeMatrixOperators`
-Which usage basically looks like this:
+The main workhorse of the toolkit is the pipe, where the functions are chained with promises
+and source all it's operands from something known as 'pipe context'.
 
-```ts
-composeMatrixOperators(
-  (A) => B, // Step 1: Transform A → B
-  (B) => C  // Step 2: Transform B → C
-);
-```
+### Schematic usage of pipe
 
-### How variables pass between steps in pipes?
+```typescript
+import { pipe, withDeps } from './csr.pipes'
+import { nonZeroCellsGet } from './nonzero-cells.get'
 
-The pipe function chains operations using .then(), passing the resolved 
-value of each step to the next:
+const yourOp = (initArg: number | CSR<number>) => pipe(
+    (_) => ({ ...ctx, entryOne: 10, count: 0, initMatr: initArg }), // define the pipe context variables of choise
 
-```ts
-Promise.resolve(initialValue)
-  .then(step1) // Output of step1 → input of step2
-  .then(step2);
-```
+    // use withDeps macro, to seize the variables from the context of pipe, they will be used in the callback then
+    withDeps('initMatr')((originalMatrix: CSR<number>) =>
+        // use map function from common operations module, by default, it takes nonZeroCellsGet generator as argument, which will supply the function with cells of target matrix
+        map(nonZeroCellsGet, (cell: MatrixCell<number>) => ({
+            ...cell,
+            val: cell.val - 1,
+        }))(originalMatrix).then((mappedMatrix) => ({ mappedMatrix })), // finally, export the variable containing the results in the pipe context to use it in other functions.
+    ),
+    
+    // Remove cells that now have a zero value after the adjustment.
+    withDeps('mappedMatrix')((mappedMatrix: CSR<number>) =>
+        filter(nonZeroCellsGet, (cell: MatrixCell<number>) => cell.val !== 0)(mappedMatrix).then(
+            (filteredMatrix) => ({ filteredMatrix }),
+        ),
+    ),
+    
+    // Compute an aggregate—here the sum of the adjusted (non-zero) cell values.
+    withDeps('filteredMatrix')((filteredMatrix: CSR<number>) =>
+        reduce(
+            nonZeroCellsGet,
+            (acc: number, cell: MatrixCell<number>) => acc + cell.val,
+            0,
+        )(filteredMatrix).then((laplacianSum) => ({ laplacianSum })),
+    ),
+    
+    // Combine the original matrix with the filtered (Laplacian) matrix using an element-wise subtraction.
+    // This example uses nonZeroCellsGet for the first matrix and allCellsGet for the second.
+    withDeps('originalMatrix', 'filteredMatrix')(
+        (originalMatrix: CSR<number>, filteredMatrix: CSR<number>) =>
+            combine(
+                nonZeroCellsGet,
+                allCellsGet,
+                (a: number, b: number) => a - b)(
+                originalMatrix,
+                filteredMatrix,
+            ).then((combinedMatrix) => ({ combinedMatrix })),
+    ),
+)(initArg) // supply the initial of the pipe from the wrapper arguments.
 
-### Example: `computeDegreeMatrix`
+// Now, use it.
+// See? simple as fuck!
+laplacianPipeline(createCSRFromCells(4, 4, [
+    { row: 0, col: 1, val: 1 },
+    { row: 0, col: 3, val: 1 },
+    { row: 1, col: 0, val: 1 },
+    { row: 2, col: 1, val: 1 },
+    { row: 2, col: 3, val: 1 },
+    { row: 3, col: 1, val: 1 },
+]))
+    .then((result) => {
+        // You can now access the context properties with dot notation.
+        console.log('Laplacian Sum:', result['laplacianSum'])
+        console.log('Combined Matrix:', result['combinedMatrix'])
+    })
+    .catch((error) => {
+        console.error('Pipeline error:', error)
+    })
 
-```ts
-const computeDegreeMatrix = composeMatrixOperators(
-  // Step 1: CSR<number> -> number[] (degrees)
-  (adjacency: CSR<number>) => reduce(...)(adjacency),
-  
-  // Step 2: number[] -> CSR<number> (diagonal matrix)
-  (degrees: number[]) => createCSRFromDiagonal(degrees)
-);
-
-// Execution flow:
-// adjacency -> degrees array -> diagonal CSR matrix
-```
-
-### How results are extracted?
-
-The final result is a `Promise` resolved after all steps complete:
-
-```ts
-const resultPromise = computeDegreeMatrix(adjacencyMatrix);
-resultPromise.then(finalCSR => {
-  console.log(finalCSR);
-});
-```
-
-### Example: `computeLaplacian`
-
-Use a closure or object to carry both A and intermediate results:
-
-```ts
-const computeLaplacian = composeMatrixOperators(
-  // Step 1: Return both A and D for later use
-  (A: CSR<number>) => ({
-    A,
-    D: computeDegreeMatrix(A)
-  }),
-  // Step 2: Use D and A from the object
-  ({ D, A }) => subtractCSR(D, A)
-);
-
-const laplacian = await computeLaplacian(adjacencyMatrix)
 ```

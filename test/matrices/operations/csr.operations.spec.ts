@@ -1,14 +1,15 @@
 import { MatrixCell } from '../../../src/matrices/matrix.interface'
-import { createCSRFromCells } from '../../../src/matrices/factories/csr.create'
 import {
-    combine,
+    createCSRFromCells,
+} from '../../../src/matrices/factories/csr.create'
+import {
     filter,
     map,
     reduce,
 } from '../../../src/matrices/operations/csr.operations'
 import { nonZeroCellsGet } from '../../../src/matrices/getters/nonzero-cells.get'
-import { CSR } from '../../../src/matrices/csr.interface'
-import { composeMatrixOperators } from '../../../src/matrices/operations/csr.pipes'
+import { pipe } from '../../../src/matrices/operations/csr.pipes'
+import { it } from 'node:test'
 // import { allCellsGet } from '../../../src/matrices/getters/all-cells.get'
 
 describe('CSR Operations', () => {
@@ -117,140 +118,113 @@ describe('CSR Operations', () => {
         })
     })
 
-    describe('combine', () => {
-        it('should compose laplacian matrix maker', () => {
-            const degreeMatrix = <T extends number>(csr: CSR<T>) =>
-                reduce(
-                    nonZeroCellsGet,
-                    (degrees, cell) => {
-                        degrees[cell.row] = (degrees[cell.row] || 0) + 1
-                        return degrees
-                    },
-                    {} as Record<number, number>,
-                )(csr).then(degrees =>
-                    createCSRFromCells(
-                        csr.rowsNumber,
-                        csr.colsNumber,
-                        Object.entries(degrees).map(([row, count]) => ({
-                            row: Number(row),
-                            col: Number(row),
-                            val: count,
-                        })),
-                    ),
-                )
-        })
-    })
+    // describe('combine', () => {
+    //     it('should compose laplacian matrix maker', () => {
+    //         const degreeMatrix = <T extends number>(csr: CSR<T>) =>
+    //             reduce(
+    //                 nonZeroCellsGet,
+    //                 (degrees, cell) => {
+    //                     degrees[cell.row] = (degrees[cell.row] || 0) + 1
+    //                     return degrees
+    //                 },
+    //                 {} as Record<number, number>,
+    //             )(csr).then(degrees =>
+    //                 createCSRFromCells(
+    //                     csr.rowsNumber,
+    //                     csr.colsNumber,
+    //                     Object.entries(degrees).map(([row, count]) => ({
+    //                         row: Number(row),
+    //                         col: Number(row),
+    //                         val: count,
+    //                     })),
+    //                 ),
+    //             )
+    //     })
+    // })
 
-    describe('others', () => {
-        const normalize = composeMatrixOperators(
-            csr =>
-                reduce(
-                    nonZeroCellsGet,
-                    (acc, cell) => ({
-                        min: Math.min(acc.min, cell.val),
-                        max: Math.max(acc.max, cell.val),
-                    }),
-                    { min: Infinity, max: -Infinity },
-                )(csr).then(({ min, max }) =>
-                    map(nonZeroCellsGet, c => ({
-                        ...c,
-                        val: (c.val - min) / (max - min),
-                    }))(csr),
-                ),
-            filter(nonZeroCellsGet, c => c.val >= 0.5),
-        )
-
-        const matrixAdd = (other: CSR<number>) => (first: CSR<number>) =>
-            combine(
-                nonZeroCellsGet,
-                nonZeroCellsGet,
-                (a, b) => a + b,
-            )(first, other)
-
-        const addEmptyMatrix = matrixAdd(createCSRFromCells(5, 5, []))
-        const result = addEmptyMatrix(createCSRFromCells(1, 2, []))
-
-        const rowsSums = composeMatrixOperators(
-            (csr: CSR<number>) =>
-                reduce(
-                    nonZeroCellsGet,
-                    (sums, cell) => {
-                        sums[cell.row] = (sums[cell.row] || 0) + cell.val
-                        return sums
-                    },
-                    {} as Record<number, number>,
-                )(csr),
-            (sums: Record<number, number>) =>
-                createCSRFromCells(
-                    Object.keys(sums).length,
-                    1,
-                    Object.entries(sums).map(([row, sum]) => ({
-                        row: Number(row),
-                        col: 0,
-                        val: sum,
-                    })),
-                ),
-        )
-
-        const computeDegreeMatrix = composeMatrixOperators(
-            (adjacency: CSR<number>) =>
-                reduce(
-                    nonZeroCellsGet,
-                    (degrees, cell) => {
-                        degrees[cell.row] = (degrees[cell.row] || 0) + cell.val
-                        return degrees
-                    },
-                    [] as number[],
-                )(adjacency),
-            (degrees: number[]) => createCSRFromDiagonal(degrees),
-        )
-
-        const computeLaplacian = composeMatrixOperators(
-            (A: CSR<number>) => ({
-                A,
-                D: computeDegreeMatrix(A),
-            }),
-            ({ D, A }) => subtractCSR(await D, A)
-        )
-
-        const computeNormalizedLaplacian = composeMatrixOperators(
-            computeDegreeMatrix,
-            // Operator 1: Compute D^(-1/2)
-            (D: CSR<number>) => {
-                const DinvSqrtValues = D.values.map(val => 1 / Math.sqrt(val))
-                return createCSRFromDiagonal(DinvSqrtValues)
-            },
-            // Operator 2: L = I - D⁻¹/2 A D⁻¹/2
-            (DinvSqrt: CSR<number>, A: CSR<number>) => {
-                const scaledA = multiplyCSR(DinvSqrt, multiplyCSR(A, DinvSqrt))
-                return subtractCSR(identityMatrix(A.rowsNumber), scaledA)
-            },
-        )
-
-        const spectralEmbedding = (k: number) =>
-            composeMatrixOperators(
-                computeNormalizedLaplacian,
-                // Operator: Compute top-k eigenvectors (simplified)
-                (L: CSR<number>) => {
-                    const { eigenvectors } = approximateTopKEigenvectors(L, k)
-                    return eigenvectorsToCSR(eigenvectors) // Stored as CSR rows
-                },
-            )
-
-        const heatKernelFilter = (t: number) =>
-            composeMatrixOperators(
-                computeLaplacian,
-                // Operator: Approximate matrix exponential (e.g., Chebyshev)
-                (L: CSR<number>) => chebyshevApproximation(L, t, 10), // 10-term expansion
-            )
-
-        const computeResistanceDistance = composeMatrixOperators(
-            computeLaplacian,
-            // Operator: Compute pseudo-inverse L⁺
-            (L: CSR<number>) => pseudoInverseCSR(L),
-            // Operator: Extract resistance distances
-            (Lplus: CSR<number>) => resistanceDistanceCSR(Lplus)
-        );
-
-    })
+    // describe('others', () => {
+    //     const normalize = composeMatrixOperators(
+    //         csr =>
+    //             reduce(
+    //                 nonZeroCellsGet,
+    //                 (acc, cell) => ({
+    //                     min: Math.min(acc.min, cell.val),
+    //                     max: Math.max(acc.max, cell.val),
+    //                 }),
+    //                 { min: Infinity, max: -Infinity },
+    //             )(csr).then(({ min, max }) =>
+    //                 map(nonZeroCellsGet, c => ({
+    //                     ...c,
+    //                     val: (c.val - min) / (max - min),
+    //                 }))(csr),
+    //             ),
+    //         filter(nonZeroCellsGet, c => c.val >= 0.5),
+    //     )
+    //
+    //     const matrixAdd = (other: CSR<number>) => (first: CSR<number>) =>
+    //         combine(
+    //             nonZeroCellsGet,
+    //             nonZeroCellsGet,
+    //             (a, b) => a + b,
+    //         )(first, other)
+    //
+    //     // const addEmptyMatrix = matrixAdd(createCSRFromCells(5, 5, []))
+    //     // const result = addEmptyMatrix(createCSRFromCells(1, 2, []))
+    //     //
+    //     // const rowsSums = composeMatrixOperators(
+    //     //     (csr: CSR<number>) =>
+    //     //         reduce(
+    //     //             nonZeroCellsGet,
+    //     //             (sums, cell) => {
+    //     //                 sums[cell.row] = (sums[cell.row] || 0) + cell.val
+    //     //                 return sums
+    //     //             },
+    //     //             {} as Record<number, number>,
+    //     //         )(csr),
+    //     //     (sums: Record<number, number>) =>
+    //     //         createCSRFromCells(
+    //     //             Object.keys(sums).length,
+    //     //             1,
+    //     //             Object.entries(sums).map(([row, sum]) => ({
+    //     //                 row: Number(row),
+    //     //                 col: 0,
+    //     //                 val: sum,
+    //     //             })),
+    //     //         ),
+    //     // )
+    //
+    //     // const matr = rowsSums(
+    //     //     createCSRFromCells(5, 5, [
+    //     //         { row: 1, col: 0, val: 5 },
+    //     //         { row: 0, col: 4, val: 6 },
+    //     //         { row: 3, col: 3, val: 7 },
+    //     //         { row: 1, col: 4, val: 8 },
+    //     //     ]),
+    //     // )
+    //     //
+    //     // expect(matr.then(v => console.log(v)))
+    //
+    //     // const computeDegreeMatrix = composeMatrixOperators(
+    //     //     (adjacency: CSR<number>) =>
+    //     //         reduce(
+    //     //             nonZeroCellsGet,
+    //     //             (degrees, cell) => {
+    //     //                 degrees[cell.row] = (degrees[cell.row] || 0) + cell.val
+    //     //                 return degrees
+    //     //             },
+    //     //             [] as number[],
+    //     //         )(adjacency),
+    //     //     (degrees: number[]) => createCSRFromDiagonal(degrees),
+    //     // )
+    //     //
+    //     // const computeLaplacian = composeMatrixOperators(
+    //     //     async (A: CSR<number>) => ({
+    //     //         A,
+    //     //         D: await computeDegreeMatrix(A),
+    //     //     }),
+    //     //     async ({ D, A }) => await subtractCSR(D, A),
+    //     // )
+    //
+    //
+    // })
 })

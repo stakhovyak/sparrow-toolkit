@@ -42,3 +42,14 @@ export const createCSRFromCells = <T extends number>(
         values: Object.freeze(values)
     });
 }
+
+export const createCSRFromDiagonal = <T extends number> (diagonal: T[]) =>
+    createCSRFromCells(
+        diagonal.length,
+        diagonal.length,
+        diagonal.map((val, i) => ({
+            row: i,
+            col: i,
+            val
+        }))
+    )

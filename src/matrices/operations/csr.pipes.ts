@@ -1,25 +1,40 @@
-import { CSR } from '../csr.interface'
+export type Context = Record<string | symbol, any>;
 
-type UnwrapPromise<T> = T extends Promise<infer U> ? U : T
+export type ResolvedObject<T extends object> = { [K in keyof T]: Awaited<T[K]> };
 
-type PipeArgs<T extends any[]> = {
-    [K in keyof T]: K extends keyof [any, ...any[]]
-        ? (arg: UnwrapPromise<T[K]>) => T[K]
-        : never
-}
+export type PipeContext<T = any, Additional extends object = {}> = {
+    value: T;
+} & Additional;
 
-export const pipe =
-    <T extends any[]>(...fns: PipeArgs<T>) =>
-    (initial: T[0] extends Promise<infer U> ? U : T[0]) => {
-        return fns.reduce((prevPromise, fn) => {
-            return prevPromise.then(fn)
-        }, Promise.resolve(initial))
-    }
+const resolveObject = async <T extends object>(obj: T): Promise<ResolvedObject<T>> => {
+    const entries = await Promise.all(
+        Object.entries(obj).map(async ([k, v]) => [k, await v])
+    );
+    return Object.fromEntries(entries) as ResolvedObject<T>;
+};
 
-export const composeMatrixOperators =
-    <T extends number>(...ops: Array<(arg: any) => any>) =>
-    (matrix: CSR<T>): Promise<CSR<T>> => {
-        return pipe(...(ops as PipeArgs<[...any[], CSR<T> | Promise<CSR<T>>]>))(
-            matrix,
-        )
-    }
+export const withDeps = <Keys extends string[], R>(...deps: Keys) => {
+    return <C extends Context>(
+        fn: (...args: { [K in keyof Keys]: C[Keys[K]] }) => R
+    ) => {
+        return (ctx: C) => {
+            const args = deps.map(d => ctx[d]) as { [K in keyof Keys]: C[Keys[K]] };
+            return fn(...args);
+        };
+    };
+};
+
+export const pipe = <Fns extends ((ctx: Context) => any)[]>(...fns: Fns) => {
+    return async <I>(initial: I): Promise<Context> => {
+        let ctx: Context = { value: initial };
+        for (const fn of fns) {
+            const result = await fn(ctx);
+            const merged =
+                typeof result === "object" && result !== null
+                    ? await resolveObject(result)
+                    : { value: result };
+            ctx = { ...ctx, ...merged };
+        }
+        return ctx;
+    };
+};
