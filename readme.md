@@ -71,11 +71,11 @@ const yourOp = (initArg: number | CSR<number>) => pipe(
 // See? simple as fuck!
 laplacianPipeline(createCSRFromCells(4, 4, [
     { row: 0, col: 1, val: 1 },
-    { row: 0, col: 3, val: 1 },
+    { row: 0, col: 3, val: 2 },
     { row: 1, col: 0, val: 1 },
-    { row: 2, col: 1, val: 1 },
+    { row: 2, col: 1, val: 5 },
     { row: 2, col: 3, val: 1 },
-    { row: 3, col: 1, val: 1 },
+    { row: 3, col: 1, val: 9 },
 ]))
     .then((result) => {
         // You can now access the context properties with dot notation.

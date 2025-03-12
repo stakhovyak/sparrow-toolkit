@@ -1,4 +1,4 @@
-import { CSR } from '../csr.interface'
+import { CSR } from '../../interface/csr.interface'
 
 export const csrRowGet =
     async function* <T extends number> (csr: CSR<T>, row: number): AsyncGenerator<number> {
@@ -16,9 +16,6 @@ export const csrRowGet =
         }
 
         for (let i = start; i < end; i++) {
-            // if (i >= csr.colIns.length || i >= csr.values.length) {
-            //     throw new Error(`Index ${i} out of bounds`);
-            // }
             yield i
         }
     }

@@ -1,8 +1,8 @@
 import { combine, map, reduce } from '../matrices/operations/csr.operations'
 import { CSR } from '../matrices/csr.interface'
 import { MatrixCell } from '../matrices/matrix.interface'
-import { allCellsGet } from '../matrices/getters/all-cells.get'
-import { nonZeroCellsGet } from '../matrices/getters/nonzero-cells.get'
+import { allCellsGet } from '../matrices/lens/get/all-cells.get'
+import { nonZeroCellsGet } from '../matrices/lens/get/nonzero-cells.get'
 
 export const sumSCRWithGenerator =
     <T extends number>(
@@ -23,16 +23,6 @@ export const subtractCSRWithGenerator =
 
 export const subtractCSR = <T extends number>(a: CSR<T>, b: CSR<T>) =>
     subtractCSRWithGenerator(allCellsGet)(a, b)
-
-// export const multiplyCSR = <T extends number>(
-//     a: CSR<T>,
-//     b: CSR<T>,
-// ): Promise<CSR<number>> => {
-//     const resultCells: MatrixCell<T>[] = []
-//
-//     for await (const cell of nonZeroCellsGet(a)) {
-//     }
-// }
 
 const hadamardProductWithGenerator =
     <T extends number>(
@@ -69,16 +59,13 @@ export const traceCSR = <T extends number>(csr: CSR<T>) =>
         0,
     )(csr)
 
-export const scaleCSR = <T extends number> (csr: CSR<T>, scalar: T)  =>
-    map(
-        nonZeroCellsGet,
-        cell => ({
-            ...cell,
-            val: cell.val * scalar,
-        })
-    )(csr)
+export const scaleCSR = <T extends number>(csr: CSR<T>, scalar: T) =>
+    map(nonZeroCellsGet, cell => ({
+        ...cell,
+        val: cell.val * scalar,
+    }))(csr)
 
-export const extractDiagonal = <T extends number> (csr: CSR<T>) =>
+export const extractDiagonal = <T extends number>(csr: CSR<T>) =>
     reduce(
         nonZeroCellsGet,
         // todo; the fuck why type is any[] not T[]???????????????????????????????????????????????????????????
@@ -86,5 +73,5 @@ export const extractDiagonal = <T extends number> (csr: CSR<T>) =>
             if (cell.row === cell.col) diag[cell.row] = cell.val
             return diag
         },
-        new Array(csr.rowsNumber).fill(0 as T)
+        new Array(csr.rowsNumber).fill(0 as T),
     )(csr)

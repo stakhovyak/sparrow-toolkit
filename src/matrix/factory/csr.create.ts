@@ -1,17 +1,17 @@
-import { CSR } from '../csr.interface'
-import { MatrixCell } from '../matrix.interface'
+import { CSR } from '../interface/csr.interface'
+import { MatrixCell } from '../interface/matrix.interface'
 
 export const createCSRFromCells = <T extends number>(
     rowsNumber: number,
     colsNumber: number,
-    cells: readonly MatrixCell<T>[]
+    cells: readonly MatrixCell<T>[],
 ): CSR<T> => {
-    const sorted = [...cells].sort((a, b) => a.row - b.row || a.col - b.col);
-    const rowPtrs = new Array(rowsNumber + 1).fill(0);
-    const colIndices: number[] = [];
-    const values: T[] = [];
-    let currentRow = 0;
-    let currentIndex = 0;
+    const sorted = [...cells].sort((a, b) => a.row - b.row || a.col - b.col)
+    const rowPtrs = new Array(rowsNumber + 1).fill(0)
+    const colIndices: number[] = []
+    const values: T[] = []
+    let currentRow = 0
+    let currentIndex = 0
     rowPtrs[0] = 0
 
     for (const cell of sorted) {
@@ -39,17 +39,17 @@ export const createCSRFromCells = <T extends number>(
         colsNumber,
         rowPtrs: Object.freeze(rowPtrs),
         colIns: Object.freeze(colIndices),
-        values: Object.freeze(values)
-    });
+        values: Object.freeze(values),
+    })
 }
 
-export const createCSRFromDiagonal = <T extends number> (diagonal: T[]) =>
+export const createCSRFromDiagonal = <T extends number>(diagonal: T[]) =>
     createCSRFromCells(
         diagonal.length,
         diagonal.length,
         diagonal.map((val, i) => ({
             row: i,
             col: i,
-            val
-        }))
+            val,
+        })),
     )

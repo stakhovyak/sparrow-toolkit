@@ -1,6 +1,6 @@
-import { MatrixCell } from '../matrix.interface'
-import { CSR } from '../csr.interface'
-import { createCSRFromCells } from '../factories/csr.create'
+import { createCSRFromCells } from "../factory/csr.create"
+import { CSR } from "../interface/csr.interface"
+import { MatrixCell } from "../interface/matrix.interface"
 
 export const map =
     <T extends number, U extends number>(
@@ -88,46 +88,45 @@ export const reduce =
         }
     }
 
-export const combine = <T extends number, U extends number, V extends number>(
-    generatorA: (csr: CSR<T>) => AsyncGenerator<MatrixCell<T>>,
-    generatorB: (csr: CSR<U>) => AsyncGenerator<MatrixCell<U>>,
-    combiner: (a: T, b: U) => V
-) => async (csrA: CSR<T>, csrB: CSR<U>): Promise<CSR<V>> => {
-    const cellMap = new Map<string, V>();
+export const combine =
+    <T extends number, U extends number, V extends number>(
+        generatorA: (csr: CSR<T>) => AsyncGenerator<MatrixCell<T>>,
+        generatorB: (csr: CSR<U>) => AsyncGenerator<MatrixCell<U>>,
+        combiner: (a: T, b: U) => V,
+    ) =>
+    async (csrA: CSR<T>, csrB: CSR<U>): Promise<CSR<V>> => {
+        const cellMap = new Map<string, V>()
 
-    // Process first matrix with type-safe coordinates
-    for await (const cell of generatorA(csrA)) {
-        const key = `${cell.row},${cell.col}`;
-        cellMap.set(key, combiner(cell.val, 0 as unknown as U));
-    }
-
-    // Process second matrix with coordinate validation
-    for await (const cell of generatorB(csrB)) {
-        const key = `${cell.row},${cell.col}`;
-        const existing = cellMap.get(key) ?? 0 as unknown as V;
-        cellMap.set(key, combiner(existing as unknown as T, cell.val));
-    }
-
-    // Type-safe cell creation with coordinate parsing
-    const cells = Array.from(cellMap.entries()).map(([key, val]) => {
-        const [rowStr, colStr] = key.split(',');
-        if (!rowStr || !colStr) {
-            throw new Error(`Invalid cell key format: ${key}`);
+        for await (const cell of generatorA(csrA)) {
+            const key = `${cell.row},${cell.col}`
+            cellMap.set(key, combiner(cell.val, 0 as unknown as U))
         }
 
-        const row = parseInt(rowStr, 10);
-        const col = parseInt(colStr, 10);
-
-        if (isNaN(row) || isNaN(col)) {
-            throw new Error(`Invalid numeric coordinates in key: ${key}`);
+        for await (const cell of generatorB(csrB)) {
+            const key = `${cell.row},${cell.col}`
+            const existing = cellMap.get(key) ?? (0 as unknown as V)
+            cellMap.set(key, combiner(existing as unknown as T, cell.val))
         }
 
-        return { row, col, val } as MatrixCell<V>;
-    });
+        const cells = Array.from(cellMap.entries()).map(([key, val]) => {
+            const [rowStr, colStr] = key.split(',')
+            if (!rowStr || !colStr) {
+                throw new Error(`Invalid cell key format: ${key}`)
+            }
 
-    return createCSRFromCells(
-        Math.max(csrA.rowsNumber, csrB.rowsNumber),
-        Math.max(csrA.colsNumber, csrB.colsNumber),
-        cells
-    );
-};
+            const row = parseInt(rowStr, 10)
+            const col = parseInt(colStr, 10)
+
+            if (isNaN(row) || isNaN(col)) {
+                throw new Error(`Invalid numeric coordinates in key: ${key}`)
+            }
+
+            return { row, col, val } as MatrixCell<V>
+        })
+
+        return createCSRFromCells(
+            Math.max(csrA.rowsNumber, csrB.rowsNumber),
+            Math.max(csrA.colsNumber, csrB.colsNumber),
+            cells,
+        )
+    }
