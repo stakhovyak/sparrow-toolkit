@@ -1,42 +1,55 @@
-// type Primitive = string | number | boolean | symbol
-
-type Context<T = unknown, TEvents extends EventMap = {}> = {
-    value: T
-    source: T
-    error?: Error
-    events: EventSystem<TEvents>
-    hooks: HookSystem<TEvents>
-} & { [key: string]: unknown }
-
-type MiddleWare<
-    TInput = unknown,
-    TOutput = unknown,
+export type Context<
+    T extends Record<string, unknown>,
     TEvents extends EventMap = {},
-> = {
-    name: string
-    deps?: (keyof Context<unknown, TEvents>)[]
-    process: (
-        ctx: Context<TInput, TEvents>,
-    ) => Promise<Context<TOutput, TEvents>> | Context<TOutput, TEvents>
-    rollback?: (ctx: Context<unknown, TEvents>) => Promise<void> | void
+> = T & {
+    $source: unknown
+    $error?: Error
+    $events: EventSystem<TEvents>
+    $hooks: HookSystem<T, TEvents>
 }
 
-type EventMap = Record<string, (...args: any[]) => void>
-type EventSystem<T extends EventMap = {}> = {
+export type MiddleWare<
+    TInput extends Record<string, unknown>,
+    TOutput extends Record<string, unknown>,
+    TEvents extends EventMap,
+> = {
+    name: string
+    deps?: (keyof TInput & string)[]
+    provides: keyof TOutput & string
+    process: (ctx: Context<TInput, TEvents>) => Promise<TOutput> | TOutput
+    rollback?: (ctx: Context<TInput & TOutput, TEvents>) => Promise<void> | void
+}
+
+export type EventMap = Record<string, (...args: any[]) => void>
+export type EventSystem<T extends EventMap = {}> = {
     on: <K extends keyof T>(event: K, handler: T[K]) => void
     emit: <K extends keyof T>(event: K, ...args: Parameters<T[K]>) => void
 }
 
-type HookRegistration<TEvents extends EventMap> = {
-    handler: (ctx: Context<unknown, TEvents>) => void
+export type HookRegistration<
+    TContext extends Record<string, unknown>,
+    TEvents extends EventMap,
+> = {
+    handler: (ctx: Context<TContext, TEvents>) => void
     priority?: number
 }
-type HookPhase = 'before' | 'after' | 'error'
-type HookSystem<TEvents extends EventMap> = {
+export type HookPhase =
+    | 'before'
+    | 'beforeEach'
+    | 'after'
+    | 'afterEach'
+    | 'error'
+export type HookSystem<
+    TContext extends Record<string, unknown>,
+    TEvents extends EventMap,
+> = {
     register: (
         phase: HookPhase,
-        handler: (ctx: Context<unknown, TEvents>) => void,
+        handler: (ctx: Context<TContext, TEvents>) => void,
+        priority?: number,
     ) => void
-    //    priority?: number
-    trigger: (phase: HookPhase, ctx: Context<unknown, TEvents>) => Promise<void>
+    trigger: (
+        phase: HookPhase,
+        ctx: Context<TContext, TEvents>,
+    ) => Promise<void>
 }
