@@ -149,8 +149,37 @@ describe('Pipeline Integration Tests', () => {
             console.log('[LOG]', message)
         })
 
+        // Middleware with event emission
+        const auditMiddleware = defineMiddleware({
+            name: 'audit',
+            provides: 'audit',
+            process: async ctx => {
+                try {
+                    ctx.$events.emit('audit.start', { timestamp: new Date() })
+                    // Processing logic...
+                    ctx.$events.emit('audit.success', { duration: 100 })
+                    return { audit: 'completed' }
+                } catch (error) {
+                    ctx.$events.emit('audit.failure', { error })
+                    throw error
+                }
+            }
+        })
+
+// Listening to custom events
+        pipeline.events.on('audit.start', ({ timestamp }) => {
+            console.log(`Audit started at ${timestamp}`)
+        })
+
+        pipeline.events.on('audit.success', ({ duration }) => {
+            console.log(`Audit completed in ${duration}ms`)
+        })
+
         // Execute with logging
         const result = await pipeline.execute({})
         console.log('Final result:', result)
+    })
+    it('should demonstrate usage of events in middleware', () => {
+
     })
 })

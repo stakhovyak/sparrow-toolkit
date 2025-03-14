@@ -21,69 +21,11 @@ and source all it's operands from something known as 'pipe context'.
 
 ### Schematic usage of pipe
 
-```typescript
-import { pipe, withDeps } from './csr.pipes'
-import { nonZeroCellsGet } from './nonzero-cells.get'
+i'll provide it later, check out tests to see how it looks like
 
-const yourOp = (initArg: number | CSR<number>) => pipe(
-    (_) => ({ ...ctx, entryOne: 10, count: 0, initMatr: initArg }), // define the pipe context variables of choise
+## TODO
 
-    // use withDeps macro, to seize the variables from the context of pipe, they will be used in the callback then
-    withDeps('initMatr')((originalMatrix: CSR<number>) =>
-        // use map function from common operations module, by default, it takes nonZeroCellsGet generator as argument, which will supply the function with cells of target matrix
-        map(nonZeroCellsGet, (cell: MatrixCell<number>) => ({
-            ...cell,
-            val: cell.val - 1,
-        }))(originalMatrix).then((mappedMatrix) => ({ mappedMatrix })), // finally, export the variable containing the results in the pipe context to use it in other functions.
-    ),
-    
-    // Remove cells that now have a zero value after the adjustment.
-    withDeps('mappedMatrix')((mappedMatrix: CSR<number>) =>
-        filter(nonZeroCellsGet, (cell: MatrixCell<number>) => cell.val !== 0)(mappedMatrix).then(
-            (filteredMatrix) => ({ filteredMatrix }),
-        ),
-    ),
-    
-    // Compute an aggregate—here the sum of the adjusted (non-zero) cell values.
-    withDeps('filteredMatrix')((filteredMatrix: CSR<number>) =>
-        reduce(
-            nonZeroCellsGet,
-            (acc: number, cell: MatrixCell<number>) => acc + cell.val,
-            0,
-        )(filteredMatrix).then((laplacianSum) => ({ laplacianSum })),
-    ),
-    
-    // Combine the original matrix with the filtered (Laplacian) matrix using an element-wise subtraction.
-    // This example uses nonZeroCellsGet for the first matrix and allCellsGet for the second.
-    withDeps('originalMatrix', 'filteredMatrix')(
-        (originalMatrix: CSR<number>, filteredMatrix: CSR<number>) =>
-            combine(
-                nonZeroCellsGet,
-                allCellsGet,
-                (a: number, b: number) => a - b)(
-                originalMatrix,
-                filteredMatrix,
-            ).then((combinedMatrix) => ({ combinedMatrix })),
-    ),
-)(initArg) // supply the initial of the pipe from the wrapper arguments.
-
-// Now, use it.
-// See? simple as fuck!
-laplacianPipeline(createCSRFromCells(4, 4, [
-    { row: 0, col: 1, val: 1 },
-    { row: 0, col: 3, val: 2 },
-    { row: 1, col: 0, val: 1 },
-    { row: 2, col: 1, val: 5 },
-    { row: 2, col: 3, val: 1 },
-    { row: 3, col: 1, val: 9 },
-]))
-    .then((result) => {
-        // You can now access the context properties with dot notation.
-        console.log('Laplacian Sum:', result['laplacianSum'])
-        console.log('Combined Matrix:', result['combinedMatrix'])
-    })
-    .catch((error) => {
-        console.error('Pipeline error:', error)
-    })
-
-```
+- [ ] weird reference error bug
+- [ ] phantom unexpected dependencies
+- [ ] `provides` function doesn't support try catch, should it?
+- [ ] requires proper testing 
