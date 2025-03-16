@@ -9,7 +9,7 @@
 <!-- TOC -->
 * [Functional Typescript toolkit for working with laplacian and spectral graph algebra](#functional-typescript-toolkit-for-working-with-laplacian-and-spectral-graph-algebra)
   * [Why "Sparrow"?](#why-sparrow)
-  * [Logo Story: A Muse's Whisper](#logo-story-a-muses-whisper)
+  * [The story behind the logo](#logo-story-a-muses-whisper)
   * [Table of contents](#table-of-contents)
   * [Why do this exist?](#why-do-this-exist)
   * [How to work with it?](#how-to-work-with-it)
