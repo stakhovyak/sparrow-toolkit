@@ -6,6 +6,16 @@
   <img src="https://github.com/stakhovyak/sparrow-toolkit/blob/98708fecd7d12047c17faae4ec8796dc5471df1d/images/logo.jpg" alt="sparrow logo" width="300" height="300"/>
 </p>
 
+## Why "Sparrow"?
+
+Sparrow is a portmanteau name combining three key concepts:
+SPArse Matrix + ARROW Syntax + ROW-Based Storage
+
+- **Sparse** - Represents sparse matrix processing - the core focus of the library for efficient handling of matrices with mostly zero values.
+- **Arrow** (→) - Dual meaning:
+  - Pipe Syntax (|>): Reflects functional programming patterns for chaining operations
+  - Graph Edges: Symbolizes directed connections in graph-based computations
+- **Row** - The name embodies the library's trifecta of features: sparse matrix operations, functional piping syntax for data transformations, and graph-aware computations using efficient row-based storage.
 
 ## Table of contents
 
@@ -27,7 +37,7 @@
   * [TODO](#todo)
 <!-- TOC -->
 
-## Why?
+## Why do this exist?
 
 Solely for my artistic needs, do not use it for serious mathematical researches
 
