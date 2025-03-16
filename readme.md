@@ -2,7 +2,30 @@
 
 # Functional Typescript toolkit for working with laplacian and spectral graph algebra
 
-![](/home/weuoimi/Workspace/typescript/Spectrum/images/logo.jpg)
+<p align="center">
+  <img src="images/logo.png" alt="sparrow logo" width="300" height="300"/>
+</p>
+
+
+## Table of contents
+
+<!-- TOC -->
+* [Functional Typescript toolkit for working with laplacian and spectral graph algebra](#functional-typescript-toolkit-for-working-with-laplacian-and-spectral-graph-algebra)
+  * [Why?](#why)
+  * [How to work with it?](#how-to-work-with-it)
+  * [How to compose algebraic/matrix operations?](#how-to-compose-algebraicmatrix-operations-)
+  * [Pipeline System Tutorial](#pipeline-system-tutorial)
+    * [Basic Pipeline Usage](#basic-pipeline-usage)
+    * [Key Pipeline Features](#key-pipeline-features)
+      * [**Middleware Chaining**:](#middleware-chaining)
+      * [**Event Handling**:](#event-handling)
+      * [**Hooks System**:](#hooks-system)
+      * [**Type Safety**:](#type-safety)
+  * [CSR Operations Tutorial](#csr-operations-tutorial)
+    * [Core Operations](#core-operations)
+    * [Complex Operations Example](#complex-operations-example)
+  * [TODO](#todo)
+<!-- TOC -->
 
 ## Why?
 
