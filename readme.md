@@ -1,28 +1,17 @@
-# NOTE! The lib is still in progress, it isn't complete and is likely to be very buggy
-
-# Functional Typescript toolkit for working with laplacian and spectral graph algebra
+# Sparrow - Functional Typescript Toolkit For Working with laplacian and spectral graph algebra
 
 <p align="center">
   <img src="https://github.com/stakhovyak/sparrow-toolkit/blob/98708fecd7d12047c17faae4ec8796dc5471df1d/images/logo.jpg" alt="sparrow logo" width="300" height="300"/>
 </p>
 
-## Why "Sparrow"?
-
-Sparrow is a portmanteau name combining three key concepts:
-SPArse Matrix + ARROW Syntax + ROW-Based Storage
-
-- **Sparse** - Represents sparse matrix processing - the core focus of the library for efficient handling of matrices with mostly zero values.
-- **Arrow** (→) - Dual meaning:
-  - Pipe Syntax (|>): Reflects functional programming patterns for chaining operations
-  - Graph Edges: Symbolizes directed connections in graph-based computations
-
-The name Sparrow draws deliberate inspiration from avian flocks - natural formations where thousands of birds collectively create ever-shifting graph structures in the sky. 
-
-## Table of contents
+## Table Of Contents
 
 <!-- TOC -->
 * [Functional Typescript toolkit for working with laplacian and spectral graph algebra](#functional-typescript-toolkit-for-working-with-laplacian-and-spectral-graph-algebra)
-  * [Why?](#why)
+  * [Why "Sparrow"?](#why-sparrow)
+  * [Logo Story: A Muse's Whisper](#logo-story-a-muses-whisper)
+  * [Table of contents](#table-of-contents)
+  * [Why do this exist?](#why-do-this-exist)
   * [How to work with it?](#how-to-work-with-it)
   * [How to compose algebraic/matrix operations?](#how-to-compose-algebraicmatrix-operations-)
   * [Pipeline System Tutorial](#pipeline-system-tutorial)
@@ -37,6 +26,25 @@ The name Sparrow draws deliberate inspiration from avian flocks - natural format
     * [Complex Operations Example](#complex-operations-example)
   * [TODO](#todo)
 <!-- TOC -->
+
+## Why "Sparrow"?
+
+Sparrow is a portmanteau name combining three key concepts:
+SPArse Matrix + ARROW Syntax + ROW-Based Storage
+
+- **Sparse** - Represents sparse matrix processing - the core focus of the library for efficient handling of matrices with mostly zero values.
+- **Arrow** (→) - Dual meaning:
+  - Pipe Syntax (|>): Reflects functional programming patterns for chaining operations
+  - Graph Edges: Symbolizes directed connections in graph-based computations
+
+The name Sparrow draws deliberate inspiration from avian flocks - natural formations where thousands of birds collectively create ever-shifting graph structures in the sky. 
+
+## The story behind the logo
+
+When the project began as a creative experiment, I jokingly envisioned my partner as a modern-day greek muse 
+Over time, this whimsical idea transformed into reality.
+
+The final artwork, crafted by her talented best friend (inst: @doubledecker_balls), depicts my lovely girlfriend with the weird hairline which resembles either schematic bird or spectral graph layout graphics
 
 ## Why do this exist?
 
