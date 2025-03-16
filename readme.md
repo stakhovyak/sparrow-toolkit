@@ -17,6 +17,8 @@ SPArse Matrix + ARROW Syntax + ROW-Based Storage
   - Graph Edges: Symbolizes directed connections in graph-based computations
 - **Row** - The name embodies the library's trifecta of features: sparse matrix operations, functional piping syntax for data transformations, and graph-aware computations using efficient row-based storage.
 
+The name Sparrow draws deliberate inspiration from avian flocks - natural formations where thousands of birds collectively create ever-shifting graph structures in the sky. 
+
 ## Table of contents
 
 <!-- TOC -->
