@@ -1,4 +1,4 @@
-# Sparrow - Functional Typescript Toolkit For Working with laplacian and spectral graph algebra
+# Sparrow - A functional typescript toolkit for working with laplacian and spectral graph algebra
 
 <p align="center">
   <img src="https://github.com/stakhovyak/sparrow-toolkit/blob/98708fecd7d12047c17faae4ec8796dc5471df1d/images/logo.jpg" alt="sparrow logo" width="300" height="300"/>
