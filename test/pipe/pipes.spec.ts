@@ -99,8 +99,7 @@ describe('Pipeline Integration Tests', () => {
             })
             // .hooks.register('afterEach', ctx => {console.log(ctx.toString().split(', ')[0])})
             // .events.on(...)
-            .execute({ init: "Hello"})
-
+            .execute({ init: 'Hello' })
 
         expect(res.final).toEqual('HELLO! IVAN')
     })
@@ -115,9 +114,12 @@ describe('Pipeline Integration Tests', () => {
             name: 'logger',
             provides: '_startedAt',
             process: ctx => {
-                ctx.$events.emit('log', `Processing started at ${new Date().toISOString()}`)
+                ctx.$events.emit(
+                    'log',
+                    `Processing started at ${new Date().toISOString()}`,
+                )
                 return { _startedAt: new Date().toISOString() }
-            }
+            },
         })
 
         // Create the pipeline
@@ -127,8 +129,8 @@ describe('Pipeline Integration Tests', () => {
                 defineMiddleware({
                     name: 'greeter',
                     provides: 'greeting',
-                    process: _ => ({ greeting: 'Hello World' })
-                })
+                    process: _ => ({ greeting: 'Hello World' }),
+                }),
             )
 
         // Register hooks
@@ -154,19 +156,19 @@ describe('Pipeline Integration Tests', () => {
             name: 'audit',
             provides: 'audit',
             process: async ctx => {
-                try {
-                    ctx.$events.emit('audit.start', { timestamp: new Date() })
-                    // Processing logic...
-                    ctx.$events.emit('audit.success', { duration: 100 })
-                    return { audit: 'completed' }
-                } catch (error) {
-                    ctx.$events.emit('audit.failure', { error })
-                    throw error
-                }
-            }
+                // try {
+                ctx.$events.emit('audit.start', { timestamp: new Date() })
+                // Processing logic...
+                ctx.$events.emit('audit.success', { duration: 100 })
+                return { audit: 'completed' }
+                // } catch (error) {
+                //     ctx.$events.emit('audit.failure', { error })
+                //     throw error
+                // }
+            },
         })
 
-// Listening to custom events
+        // Listening to custom events
         pipeline.events.on('audit.start', ({ timestamp }) => {
             console.log(`Audit started at ${timestamp}`)
         })
@@ -179,7 +181,5 @@ describe('Pipeline Integration Tests', () => {
         const result = await pipeline.execute({})
         console.log('Final result:', result)
     })
-    it('should demonstrate usage of events in middleware', () => {
-
-    })
+    it('should demonstrate usage of events in middleware', () => {})
 })
