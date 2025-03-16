@@ -2,6 +2,8 @@
 
 # Functional Typescript toolkit for working with laplacian and spectral graph algebra
 
+![](/home/weuoimi/Workspace/typescript/Spectrum/images/logo.jpg)
+
 ## Why?
 
 Solely for my artistic needs, do not use it for serious mathematical researches
@@ -19,13 +21,183 @@ the programmer to use handlers, to prevent function side effects
 The main workhorse of the toolkit is the pipe, where the functions are chained with promises
 and source all it's operands from something known as 'pipe context'.
 
-### Schematic usage of pipe
+## Pipeline System Tutorial
 
-i'll provide it later, check out tests to see how it looks like
+### Basic Pipeline Usage
+
+Create processing pipelines with middleware for complex matrix operations:
+
+```typescript
+import { createPipeline, defineMiddleware } from './pipe'
+import { createCSRFromCells } from './csr'
+
+// Define event types
+interface MatrixEvents {
+  log: (message: string) => void
+  matrix_created: (matrix: CSR<number>) => void
+}
+
+// Create middleware to generate CSR matrix
+const matrixCreator = defineMiddleware({
+  name: 'matrix-creator',
+  provides: 'csr',
+  process: () => ({
+    csr: createCSRFromCells(3, 3, [
+      { row: 0, col: 1, val: 5 },
+      { row: 1, col: 2, val: 3 }
+    ])
+  })
+})
+
+// Create transformation middleware
+const matrixTransformer = defineMiddleware({
+  name: 'matrix-transformer',
+  deps: ['csr'],
+  provides: 'transformed',
+  process: async (ctx) => {
+    const transformed = await map(nonZeroCellsGet, cell => ({
+      ...cell,
+      val: cell.val * 2
+    }))(ctx.csr)
+    
+    ctx.$events.emit('log', 'Matrix transformed')
+    return { transformed }
+  }
+})
+
+// Build and execute pipeline
+const pipeline = createPipeline<MatrixEvents>()
+  .use(matrixCreator)
+  .use(matrixTransformer)
+
+pipeline.events.on('log', console.log)
+const result = await pipeline.execute({})
+```
+
+### Key Pipeline Features
+
+#### **Middleware Chaining**:
+```typescript
+pipeline
+  .use(createMatrix)
+  .use(transformMatrix)
+  .use(analyzeMatrix)
+```
+
+#### **Event Handling**:
+```typescript
+pipeline.events.on('matrix_created', matrix => {
+  console.log('New matrix:', matrix.values)
+})
+```
+#### **Hooks System**:
+```typescript
+pipeline.hooks.register('before', ctx => {
+  console.log('Starting pipeline with:', ctx)
+})
+
+pipeline.hooks.register('afterEach', ctx => {
+  console.log('Completed middleware step:', ctx)
+})
+```
+
+#### **Type Safety**:
+```typescript
+defineMiddleware<InputType, OutputType>({
+  deps: ['required_property'],
+  provides: 'new_property',
+  // ...
+})
+```
+
+---
+
+## CSR Operations Tutorial
+
+### Core Operations
+
+1. **Matrix Creation**:
+```typescript
+// From individual cells
+const sparseMatrix = createCSRFromCells(4, 4, [
+  { row: 0, col: 1, val: 5 },
+  { row: 2, col: 3, val: 3 }
+])
+
+// Diagonal matrix
+const diagonalMatrix = createCSRFromDiagonal([1, 2, 3, 4])
+```
+
+2. **Matrix Transformation**:
+```typescript
+// Double all values
+const doubled = await map(nonZeroCellsGet, cell => ({
+  ...cell,
+  val: cell.val * 2
+}))(originalMatrix)
+```
+
+3. **Matrix Filtering**:
+```typescript
+// Keep values > 2
+const filtered = await filter(nonZeroCellsGet, cell => 
+  cell.val > 2
+)(originalMatrix)
+```
+
+4. **Matrix Combination**:
+```typescript
+// Add two matrices
+const sum = await combine(
+  nonZeroCellsGet,
+  nonZeroCellsGet,
+  (a, b) => a + b
+)(matrixA, matrixB)
+```
+
+5. **Reduction**:
+```typescript
+// Sum all values
+const total = await reduce(
+  nonZeroCellsGet,
+  (acc, cell) => acc + cell.val,
+  0
+)(matrix)
+```
+
+### Complex Operations Example
+
+```typescript
+// Create Laplacian matrix
+const adjacency = createCSRFromCells(4, 4, [
+  { row: 0, col: 1, val: 1 }, { row: 1, col: 0, val: 1 },
+  { row: 1, col: 2, val: 1 }, { row: 2, col: 1, val: 1 },
+  { row: 2, col: 3, val: 1 }, { row: 3, col: 2, val: 1 }
+])
+
+// Create degree matrix
+const degrees = await Promise.all(
+  Array.from({ length: adjacency.rowsNumber }, (_, row) =>
+    reduce(nonZeroCellsGet, (acc, cell) => 
+      acc + (cell.row === row ? 1 : 0), 0
+    )(adjacency)
+))
+
+const degreeMatrix = createCSRFromDiagonal(degrees)
+
+// Calculate Laplacian
+const laplacian = await combine(
+  nonZeroCellsGet,
+  nonZeroCellsGet,
+  (a, b) => a - b
+)(degreeMatrix, adjacency)
+```
+
+---
 
 ## TODO
 
 - [ ] weird reference error bug
 - [ ] phantom unexpected dependencies
-- [ ] `provides` function doesn't support try catch, should it?
+- [ ] make better type infer for process ctx
 - [ ] requires proper testing 
