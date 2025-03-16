@@ -2,7 +2,7 @@
 
 # Functional Typescript toolkit for working with laplacian and spectral graph algebra
 
-![](/home/weuoimi/Workspace/typescript/Spectrum/images/logo.jpg)
+![](./images/logo.jpg)
 
 ## Why?
 
