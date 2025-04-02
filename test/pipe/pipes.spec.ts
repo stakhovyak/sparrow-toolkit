@@ -1,5 +1,5 @@
 import { EventMap } from '../../src/pipe/pipe.types'
-import { createPipeline, defineMiddleware } from '../../src/pipe/pipe.create'
+import { makePipe, expandMiddleware } from '../../src/pipe/pipe.create'
 
 /**
  * A simple event map for testing.
@@ -11,7 +11,7 @@ interface TestEvents extends EventMap {
 describe('Pipeline Integration Tests', () => {
     it('should chain middleware and merge context values', async () => {
         // Assuming TestEvents is defined somewhere.
-        const mw1 = defineMiddleware({
+        const mw1 = expandMiddleware({
             name: 'addX',
             deps: ['a'],
             provides: 'x',
@@ -19,14 +19,14 @@ describe('Pipeline Integration Tests', () => {
         })
 
         // For a middleware that depends on a property from a previous middleware:
-        const mw2 = defineMiddleware({
+        const mw2 = expandMiddleware({
             name: 'addY',
             deps: ['x'],
             provides: 'y',
             process: ctx => ({ y: ctx.x * 2 }),
         })
 
-        const pipeline = createPipeline<TestEvents>()
+        const pipeline = makePipe<TestEvents>()
 
         // Use both middlewares in the pipeline.
         pipeline.use(mw1).use(mw2)
@@ -43,9 +43,9 @@ describe('Pipeline Integration Tests', () => {
     })
 
     it('should chain middleware and merge context values (more complex)', async () => {
-        const pipelineResult = await createPipeline<TestEvents>()
+        const pipelineResult = await makePipe<TestEvents>()
             .use(
-                defineMiddleware({
+                expandMiddleware({
                     name: '1',
                     deps: ['initial', 'a'],
                     provides: 'y',
@@ -53,14 +53,14 @@ describe('Pipeline Integration Tests', () => {
                 }),
             )
             .use(
-                defineMiddleware({
+                expandMiddleware({
                     name: '2',
                     provides: 'sup',
                     process: _ => ({ sup: 10 }),
                 }),
             )
             .use(
-                defineMiddleware({
+                expandMiddleware({
                     name: '3',
                     deps: ['sup', 'initial', 'y'],
                     provides: 'final',
@@ -80,14 +80,14 @@ describe('Pipeline Integration Tests', () => {
     })
     it('should sdfdf', async () => {
         const greetName = (name: string) =>
-            defineMiddleware({
+            expandMiddleware({
                 name: 'greetName',
                 deps: ['init'],
                 provides: 'greetedString',
                 process: ctx => ({ greetedString: `${ctx.init}! ${name}` }),
             })
 
-        const res = await createPipeline()
+        const res = await makePipe()
             .use(greetName('Ivan'))
             .use({
                 name: 'in upper case',
@@ -110,7 +110,7 @@ describe('Pipeline Integration Tests', () => {
         }
 
         // Create middleware that emits events
-        const loggingMiddleware = defineMiddleware({
+        const loggingMiddleware = expandMiddleware({
             name: 'logger',
             provides: '_startedAt',
             process: ctx => {
@@ -123,10 +123,10 @@ describe('Pipeline Integration Tests', () => {
         })
 
         // Create the pipeline
-        const pipeline = createPipeline<TestEvents>()
+        const pipeline = makePipe<TestEvents>()
             .use(loggingMiddleware)
             .use(
-                defineMiddleware({
+                expandMiddleware({
                     name: 'greeter',
                     provides: 'greeting',
                     process: _ => ({ greeting: 'Hello World' }),
@@ -152,7 +152,7 @@ describe('Pipeline Integration Tests', () => {
         })
 
         // Middleware with event emission
-        const auditMiddleware = defineMiddleware({
+        const auditMiddleware = expandMiddleware({
             name: 'audit',
             provides: 'audit',
             process: async ctx => {

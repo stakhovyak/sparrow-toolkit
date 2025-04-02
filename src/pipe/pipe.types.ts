@@ -8,15 +8,15 @@ export type Context<
     $hooks: HookSystem<T, TEvents>
 }
 
-export type MiddleWare<
+export type Middleware<
     TInput extends Record<string, unknown>,
     TOutput extends Record<string, unknown>,
     TEvents extends EventMap,
 > = {
     name: string
     deps?: (keyof TInput & string)[]
-    provides: keyof TOutput & string
-    process: (ctx: Context<TInput, TEvents>) => Promise<TOutput> | TOutput
+    provides: (keyof TOutput & string)[]
+    process: (ctx: Context<TInput, TEvents>) => Promise<TOutput> | TOutput // Promise<Context<TOutput, TEvents>> // Context<TOutput, TEvents>
     rollback?: (ctx: Context<TInput & TOutput, TEvents>) => Promise<void> | void
 }
 

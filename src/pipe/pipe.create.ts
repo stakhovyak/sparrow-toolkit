@@ -5,11 +5,11 @@ import {
     HookPhase,
     HookRegistration,
     HookSystem,
-    MiddleWare,
+    Middleware,
 } from './pipe.types'
-import { Pipeline } from './pipe.interface'
+import { Pipe } from './pipe.interface'
 
-export const createEventSystem = <T extends EventMap>(): EventSystem<T> => {
+export const makeEventSystem = <T extends EventMap>(): EventSystem<T> => {
     const listeners = new Map<keyof T, Set<(...args: any[]) => void>>()
 
     return {
@@ -23,7 +23,7 @@ export const createEventSystem = <T extends EventMap>(): EventSystem<T> => {
     }
 }
 
-export const createHookSystem = <
+export const makeHookSystem = <
     TContext extends Record<string, unknown>,
     TEvents extends EventMap,
 >(): HookSystem<TContext, TEvents> => {
@@ -46,7 +46,7 @@ export const createHookSystem = <
     }
 }
 
-export const createInitialContext = <
+export const makeInitialContext = <
     T extends Record<string, unknown>,
     TEvents extends EventMap,
 >(
@@ -56,7 +56,7 @@ export const createInitialContext = <
     ...input,
     $source: input,
     $events: events,
-    $hooks: createHookSystem<T, TEvents>(),
+    $hooks: makeHookSystem<T, TEvents>(),
 })
 
 export const processMiddleware = async <
@@ -64,7 +64,7 @@ export const processMiddleware = async <
     TOutput extends Record<string, unknown>,
     TEvents extends EventMap,
 >(
-    mw: MiddleWare<TInput, TOutput, TEvents>,
+    mw: Middleware<TInput, TOutput, TEvents>,
     ctx: Context<TInput, TEvents>,
 ): Promise<Context<TInput & TOutput, TEvents>> => {
     try {
@@ -105,7 +105,7 @@ export const processMiddleware = async <
                 ...ctx,
                 ...(await mw.process(ctx)),
                 $error: error as Error,
-                $hooks: createHookSystem<TInput & TOutput, TEvents>(),
+                $hooks: makeHookSystem<TInput & TOutput, TEvents>(),
             }
             await mw.rollback(errorContext)
         }
@@ -113,51 +113,51 @@ export const processMiddleware = async <
     }
 }
 
-type InferInput<TProcess> = TProcess extends (ctx: Context<infer I, any>) => any
+export type InferInput<TProcess> = TProcess extends (ctx: Context<infer I, any>) => any
     ? I
     : never
 
-type InferOutput<TProcess> = TProcess extends (
+export type InferOutput<TProcess> = TProcess extends (
     ctx: Context<any, any>,
 ) => infer O
     ? O
     : never
 
-export function defineMiddleware<
+export const expandMiddleware = <
     TProcess extends (ctx: any) => any,
     TEvents extends Record<string, (...args: any[]) => void> = {},
 >(mw: {
     name: string
     deps?: (keyof InferInput<TProcess> & string)[]
-    provides: keyof InferOutput<TProcess> & string
+    provides: (keyof InferOutput<TProcess> & string)[]
     process: TProcess
     rollback?: (
         ctx: Context<InferInput<TProcess> & InferOutput<TProcess>, TEvents>,
     ) => void | Promise<void>
-}): MiddleWare<InferInput<TProcess>, InferOutput<TProcess>, TEvents> {
-    return mw as MiddleWare<
+}): Middleware<InferInput<TProcess>, InferOutput<TProcess>, TEvents> => {
+    return mw as Middleware<
         InferInput<TProcess>,
         InferOutput<TProcess>,
         TEvents
     >
 }
 
-export const createPipeline = <
+export const makePipe = <
     TEvents extends EventMap = {},
     TInitial extends Record<string, unknown> = Record<string, unknown>,
->(): Pipeline<TInitial, Record<string, unknown>, TEvents> => {
-    const middlewares: MiddleWare<
+>(): Pipe<TInitial, Record<string, unknown>, TEvents> => {
+    const middlewares: Middleware<
         Record<string, unknown>,
         Record<string, unknown>,
         TEvents
     >[] = []
-    const eventSystem = createEventSystem<TEvents>()
-    const hookSystem = createHookSystem<Record<string, unknown>, TEvents>()
+    const eventSystem = makeEventSystem<TEvents>()
+    const hookSystem = makeHookSystem<Record<string, unknown>, TEvents>()
 
     return {
         async execute(input) {
-            let ctx = createInitialContext(input, eventSystem)
-            const hookSystem = createHookSystem<typeof ctx, TEvents>()
+            let ctx = makeInitialContext(input, eventSystem)
+            const hookSystem = makeHookSystem<typeof ctx, TEvents>()
 
             try {
                 await hookSystem.trigger('before', ctx)
@@ -166,7 +166,7 @@ export const createPipeline = <
                     await hookSystem.trigger('beforeEach', ctx)
                     // Type assertion for middleware compatibility
                     ctx = await processMiddleware(
-                        mw as unknown as MiddleWare<typeof ctx, any, TEvents>,
+                        mw as unknown as Middleware<typeof ctx, any, TEvents>,
                         ctx,
                     )
                     Object.freeze(ctx)
@@ -180,10 +180,7 @@ export const createPipeline = <
                 const errorCtx: Context<Record<string, unknown>, TEvents> = {
                     ...ctx,
                     $error: error as Error,
-                    $hooks: createHookSystem<
-                        Record<string, unknown>,
-                        TEvents
-                    >(),
+                    $hooks: makeHookSystem<Record<string, unknown>, TEvents>(),
                 }
 
                 await hookSystem.trigger(
@@ -195,14 +192,18 @@ export const createPipeline = <
         },
 
         use<TNew extends Record<string, unknown>>(
-            mw: MiddleWare<Record<string, unknown>, TNew, TEvents>,
+            mw: Middleware<Record<string, unknown>, TNew, TEvents>,
         ) {
-            middlewares.push(mw as MiddleWare<any, any, TEvents>)
-            return this as unknown as Pipeline<
+            middlewares.push(mw as Middleware<any, any, TEvents>)
+            return this as unknown as Pipe<
                 TInitial, // try to tinker unknown / never
                 Record<string, unknown> & TNew,
                 TEvents
             >
+        },
+        on(event, handler) {
+            eventSystem.on(event, handler)
+            return this
         },
 
         events: eventSystem,

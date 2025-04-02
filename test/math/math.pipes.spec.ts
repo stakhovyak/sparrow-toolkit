@@ -1,6 +1,6 @@
 import { EventMap } from '../../src/pipe/pipe.types'
 import { CSR } from '../../src/matrix/interface/csr.interface'
-import { createPipeline, defineMiddleware } from '../../src/pipe/pipe.create'
+import { makePipe, expandMiddleware } from '../../src/pipe/pipe.create'
 import {
     createCSRFromCells,
     createCSRFromDiagonal,
@@ -23,10 +23,10 @@ describe('MathPipes', () => {
 
     it('should operate with csr', async () => {
         // @ts-ignore
-        const createCSRFromContext = defineMiddleware({
+        const createCSRFromContext = expandMiddleware({
             name: 'createCSR',
             deps: ['width', 'height', 'cells'],
-            provides: 'csr',
+            provides: ['csr'],
             process: ctx => ({
                 csr: createCSRFromCells(ctx.height, ctx.width, ctx.cells),
             }),
@@ -37,9 +37,9 @@ describe('MathPipes', () => {
             width: number,
             cells: MatrixCell<number>[],
         ) =>
-            defineMiddleware({
+            expandMiddleware({
                 name: 'createCSR',
-                provides: 'csr',
+                provides: ['csr'],
                 process: c => {
                     const csr = createCSRFromCells(height, width, cells)
 
@@ -52,7 +52,7 @@ describe('MathPipes', () => {
                 },
             })
 
-        const pipeline = createPipeline<MathCSREvents>()
+        const pipeline = makePipe<MathCSREvents>()
             .use(
                 createCSRFromArgs(4, 4, [
                     { row: 0, col: 1, val: 10 },
@@ -66,7 +66,7 @@ describe('MathPipes', () => {
             .use({
                 name: 'mapThrough',
                 deps: ['csr'],
-                provides: 'mappedCsr',
+                provides: ['mappedCsr'],
                 process: async c => {
                     const mappedCsr = await map(nonZeroCellsGet, cell => ({
                         ...cell,
@@ -84,7 +84,7 @@ describe('MathPipes', () => {
             .use({
                 name: 'combine',
                 deps: ['csr', 'mappedCsr'],
-                provides: 'combinedCsr',
+                provides: ['combinedCsr'],
                 process: async c => {
                     const combinedCsr = await combine(
                         nonZeroCellsGet,
@@ -128,9 +128,9 @@ describe('LaplacianMatrixOperations', () => {
             width: number,
             cells: MatrixCell<number>[],
         ) =>
-            defineMiddleware({
+            expandMiddleware({
                 name: 'createCSR',
-                provides: 'csr',
+                provides: ['csr'],
                 process: c => {
                     const csr = createCSRFromCells(height, width, cells)
                     c.$events.emit('matrix_created', csr)
@@ -139,7 +139,7 @@ describe('LaplacianMatrixOperations', () => {
             })
 
         // Create pipeline for Laplacian matrix operations
-        const pipeline = createPipeline<MatrixEvents>()
+        const pipeline = makePipe<MatrixEvents>()
             // Create adjacency matrix for a simple graph (4-node cycle)
             .use(
                 createCSRFromArgs(4, 4, [
@@ -155,7 +155,7 @@ describe('LaplacianMatrixOperations', () => {
             .use({
                 name: 'createDegreeMatrix',
                 deps: ['csr'],
-                provides: 'degree',
+                provides: ['degree'],
                 process: async c => {
                     // Calculate row degrees using reduce
                     const rowDegrees = await Promise.all(
@@ -188,7 +188,7 @@ describe('LaplacianMatrixOperations', () => {
             .use({
                 name: 'createLaplacian',
                 deps: ['csr', 'degree'],
-                provides: 'laplacian',
+                provides: ['laplacian'],
                 process: async c => {
                     // Subtract adjacency matrix from degree matrix
                     const laplacian = await combine(
@@ -211,7 +211,7 @@ describe('LaplacianMatrixOperations', () => {
             .use({
                 name: 'validateLaplacian',
                 deps: ['laplacian'],
-                provides: 'validation',
+                provides: ['validation'],
                 process: async c => {
                     // Verify diagonal entries equal node degrees
                     const diagonalValid = await reduce(
@@ -256,11 +256,11 @@ describe('AdvancedLaplacianOperations', () => {
 
     // Shared pipeline setup for Laplacian creation
     const createBasePipeline = () =>
-        createPipeline<GraphEvents>()
+        makePipe<GraphEvents>()
             .use(
-                defineMiddleware({
+                expandMiddleware({
                     name: 'createAdjacency',
-                    provides: 'adjacency',
+                    provides: ['adjacency'],
                     process: () => ({
                         adjacency: createCSRFromCells(4, 4, [
                             { row: 0, col: 1, val: 1 },
@@ -276,7 +276,7 @@ describe('AdvancedLaplacianOperations', () => {
             .use({
                 name: 'createDegree',
                 deps: ['adjacency'],
-                provides: 'degree',
+                provides: ['degree'],
                 process: async ctx => ({
                     degree: createCSRFromDiagonal(
                         await Promise.all(
@@ -297,7 +297,7 @@ describe('AdvancedLaplacianOperations', () => {
             .use({
                 name: 'createLaplacian',
                 deps: ['degree', 'adjacency'],
-                provides: 'laplacian',
+                provides: ['laplacian'],
                 process: async ctx => ({
                     laplacian: await combine(
                         nonZeroCellsGet,
@@ -311,7 +311,7 @@ describe('AdvancedLaplacianOperations', () => {
         const pipeline = createBasePipeline().use({
             name: 'findFiedlerValue',
             deps: ['laplacian'],
-            provides: 'fiedler',
+            provides: ['fiedler'],
             process: async ctx => {
                 // Simplified eigenvalue approximation
                 const mockEigenvalues = [0, 0.5858, 2, 3.4142]
@@ -337,7 +337,7 @@ describe('AdvancedLaplacianOperations', () => {
             .use({
                 name: 'computePseudoinverse',
                 deps: ['laplacian'],
-                provides: 'laplacianPlus',
+                provides: ['laplacianPlus'],
                 process: async _ => ({
                     // Mock pseudoinverse for 4-node path graph
                     laplacianPlus: createCSRFromCells(4, 4, [
@@ -355,7 +355,7 @@ describe('AdvancedLaplacianOperations', () => {
             .use({
                 name: 'calculateResistance',
                 deps: ['laplacianPlus'],
-                provides: 'resistance',
+                provides: ['resistance'],
                 process: async ctx => {
                     const resistance =
                         (await cellValueGet(ctx.laplacianPlus, 0, 0)())
@@ -379,7 +379,7 @@ describe('AdvancedLaplacianOperations', () => {
             .use({
                 name: 'findFiedlerVector',
                 deps: ['laplacian'],
-                provides: 'fiedlerVector',
+                provides: ['fiedlerVector'],
                 process: async _ => {
                     // Mock Fiedler vector for 4-node path graph
                     return { fiedlerVector: [-0.5, -0.5, 0.5, 0.5] }
@@ -388,7 +388,7 @@ describe('AdvancedLaplacianOperations', () => {
             .use({
                 name: 'clusterNodes',
                 deps: ['fiedlerVector'],
-                provides: 'clusters',
+                provides: ['clusters'],
                 process: ctx => ({
                     clusters: ctx.fiedlerVector.map(v => (v < 0 ? 0 : 1)),
                 }),
@@ -403,7 +403,7 @@ describe('AdvancedLaplacianOperations', () => {
             .use({
                 name: 'reduceLaplacian',
                 deps: ['laplacian'],
-                provides: 'reducedLaplacian',
+                provides: ['reducedLaplacian'],
                 process: async ctx => ({
                     reducedLaplacian: filter(
                         nonZeroCellsGet,
@@ -414,7 +414,7 @@ describe('AdvancedLaplacianOperations', () => {
             .use({
                 name: 'calculateDeterminant',
                 deps: ['reducedLaplacian'],
-                provides: 'spanningTrees',
+                provides: ['spanningTrees'],
                 process: async ctx => {
                     // For 4-node path graph, number of spanning trees = 3
                     ctx.$events.emit(

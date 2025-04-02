@@ -7,7 +7,7 @@ export const createCSRFromCells = <T extends number>(
     cells: readonly MatrixCell<T>[],
 ): CSR<T> => {
     const sorted = [...cells].sort((a, b) => a.row - b.row || a.col - b.col)
-    const rowPtrs = new Array(rowsNumber + 1).fill(0)
+    const rowPtrs: number[] = [] // new Array(rowsNumber + 1).fill(0)
     const colIndices: number[] = []
     const values: T[] = []
     let currentRow = 0
