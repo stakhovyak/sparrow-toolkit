@@ -1,29 +1,37 @@
-import {
-    Context,
-    EventMap,
-    EventSystem,
-    HookSystem,
-    Middleware,
-} from './pipe.types'
+import { Context, EventMap } from './pipe.types'
+import { Pipe } from './pipe'
 
-export interface Pipe<
-    TInitial extends Record<string, unknown>,
-    TCurrent extends Record<string, unknown>,
+export interface PipeI<
+    TContext extends Record<string, unknown>,
     TEvents extends EventMap,
 > {
-    use: <TNew extends Record<string, unknown>>(
-        middleware: Middleware<TCurrent, TNew, TEvents>,
-    ) => Pipe<TInitial, TCurrent & TNew, TEvents>
+    use<TNew extends Record<string, unknown>>(
+        processors: Record<
+            string,
+            (ctx: Context<TContext>) => Promise<TNew> | TNew
+        >,
+    ): PipeI<TContext & TNew, TEvents>
 
-    execute: (input: TInitial) => Promise<Context<TCurrent, TEvents>>
+    embed<
+        TNewContext extends Record<string, unknown>,
+        TNewEvents extends EventMap,
+    >(
+        ...pipes: Pipe<TNewContext, TNewEvents>[]
+    ): Pipe<TContext & TNewContext, TEvents & TNewEvents>
 
-    on: <K extends keyof TEvents>(
+    branch<
+        TTrueContext extends Record<string, unknown>,
+        TFalseContext extends Record<string, unknown>,
+    >(
+        predicate: (ctx: Context<TContext>) => boolean,
+        truePipe: Pipe<TTrueContext, TEvents>,
+        falsePipe: Pipe<TFalseContext, TEvents>,
+    ): Pipe<TContext & (TTrueContext | TFalseContext), TEvents>
+
+    on<K extends keyof TEvents>(
         event: K,
-        handler: TEvents[K]
-    ) => Pipe<TInitial, TCurrent, TEvents>
+        handler: TEvents[K],
+    ): PipeI<TContext, TEvents>
 
-    // deprecated
-    events: EventSystem<TEvents>
-
-    hooks: HookSystem<TCurrent, TEvents>
+    execute(input?: Partial<TContext>): Promise<Context<TContext>>
 }

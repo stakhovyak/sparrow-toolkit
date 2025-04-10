@@ -1,4 +1,4 @@
-import { expandMiddleware, makePipe } from '../../src/pipe/pipe.create'
+import { expandMiddleware, makePipe } from '../../src/pipe/pipe'
 import { EventMap } from '../../src/pipe/pipe.types'
 import { CSR } from '../../src/matrix/interface/csr.interface'
 import { expandWith } from '../../src/pipe/macros/pipe.macros'

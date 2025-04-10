@@ -1,4 +1,4 @@
-import { expandMiddleware, InferInput, InferOutput } from '../pipe.create'
+import { expandMiddleware, InferInput, InferOutput } from '../pipe'
 import { Context } from '../pipe.types'
 
 type AutoInferDepsFromProcess<TProcess> =
