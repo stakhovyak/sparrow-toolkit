@@ -1,4 +1,4 @@
-# Sparrow - Functional Typescript Toolkit For Working with laplacian and spectral graph algebra
+# Sparrow - A functional typescript toolkit for working with laplacian and spectral graph algebra
 
 <p align="center">
   <img src="https://github.com/stakhovyak/sparrow-toolkit/blob/98708fecd7d12047c17faae4ec8796dc5471df1d/images/logo.jpg" alt="sparrow logo" width="300" height="300"/>
@@ -41,10 +41,10 @@ The name Sparrow draws deliberate inspiration from avian flocks - natural format
 
 ## The story behind the logo
 
-When the project began as a creative experiment, I jokingly envisioned my partner as a modern-day greek muse 
-Over time, this whimsical idea transformed into reality.
+When the project began as a creative experiment, I jokingly envisioned my partner as a modern-day greek muse. 
+Over time, this idea transformed into reality.
 
-The final artwork, crafted by her talented best friend (inst: @doubledecker_balls), depicts my lovely girlfriend with the weird hairline which resembles either schematic bird or spectral graph layout graphics
+The final artwork, crafted by her talented best friend (inst: @doubledecker_balls), depicts my lovely girlfriend with the weird hairline which resembles either a book or spectral graph layout graphics
 
 ## Why do this exist?
 
